@@ -1,0 +1,9 @@
+﻿{
+  "name": "Робот",
+  "short_name": "Робот",
+  "start_url": "./face.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]
+}

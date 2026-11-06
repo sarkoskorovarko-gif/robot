@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Робот — тест</title>
+<style>
+body{font-family:sans-serif;background:#222;color:#eee;margin:0;padding:12px;user-select:none;-webkit-user-select:none}
+button{font-size:20px;padding:14px 18px;margin:4px;border:0;border-radius:10px;background:#ff7a00;color:#fff;touch-action:none}
+button.s{background:#555}
+.row{display:flex;align-items:center;gap:6px;margin:6px 0}
+.row b{width:90px}
+#st{margin:8px 0;font-size:16px}
+#log{font:12px monospace;color:#9c9;white-space:pre;max-height:120px;overflow:auto}
+</style></head><body>
+<button id="cn">Подключить</button> <span id="st">не подключён</span>
+<input id="sp" type="range" min="20" max="127" value="60"> скорость <span id="spv">60</span>
+<div id="rows"></div>
+<div id="log"></div>
+<script>
+const SVC=0xfff0, CH=0xfff2; let ch=null, m=new Array(8).fill(128), timer=null;
+const st=document.getElementById('st'), lg=document.getElementById('log'), sp=document.getElementById('sp');
+sp.oninput=()=>document.getElementById('spv').textContent=sp.value;
+function log(s){lg.textContent=s+'\n'+lg.textContent.slice(0,2000)}
+function pkt(){const p=[0xAC,1,2,1,...m];let s=0;for(const b of p)s+=b;p.push(s&255,0x35);return new Uint8Array(p)}
+async function send(){if(!ch)return;const p=pkt();try{await ch.writeValueWithoutResponse?ch.writeValueWithoutResponse(p):ch.writeValue(p)}catch(e){try{await ch.writeValue(p)}catch(e2){log('ошибка '+e2)}}}
+document.getElementById('cn').onclick=async()=>{
+ try{const d=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'LFL'}],optionalServices:[SVC]});
+  st.textContent='подключаю…';const g=await d.gatt.connect();const s=await g.getPrimaryService(SVC);ch=await s.getCharacteristic(CH);
+  st.textContent='подключён: '+d.name;d.addEventListener('gattserverdisconnected',()=>{ch=null;st.textContent='отключился'});
+  m.fill(128);send();}catch(e){st.textContent='ошибка: '+e.message}};
+function start(i,dir){m.fill(128);m[i]=128+dir*(+sp.value);if(m[i]>255)m[i]=255;log('байт '+(i+4)+' = '+m[i]);send();clearInterval(timer);timer=setInterval(send,100)}
+function stop(){clearInterval(timer);timer=null;m.fill(128);send();setTimeout(send,60)}
+const rows=document.getElementById('rows');
+for(let i=0;i<8;i++){const r=document.createElement('div');r.className='row';
+ r.innerHTML='<b>мотор '+(i+1)+'</b>';
+ for(const [t,dir] of [['◀',-1],['▶',1]]){const b=document.createElement('button');b.textContent=t;
+  b.onpointerdown=e=>{e.preventDefault();start(i,dir)};b.onpointerup=b.onpointerleave=b.onpointercancel=stop;r.appendChild(b)}
+ rows.appendChild(r)}
+const sb=document.createElement('button');sb.className='s';sb.textContent='СТОП';sb.onclick=stop;rows.appendChild(sb);
+</script></body></html>
