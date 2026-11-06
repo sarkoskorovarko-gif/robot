@@ -3,43 +3,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Лицо робота</title>
-<style>
-html,body{margin:0;height:100%;background:#000;overflow:hidden;user-select:none;-webkit-user-select:none;font-family:sans-serif}
-canvas{display:block;width:100vw;height:100vh}
-#ui{position:fixed;inset:auto 0 0 0;display:none;background:rgba(20,20,20,.85);padding:8px;color:#eee}
-#ui.on{display:block}
-.g{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin:4px 0}
-button{font-size:18px;padding:12px 14px;border:0;border-radius:10px;background:#ff7a00;color:#fff;touch-action:none;min-width:56px}
-button.e{background:#2b6cb0}button.s{background:#555}
-#st{font-size:14px;text-align:center}
-#hint{position:fixed;top:6px;right:10px;color:#444;font-size:12px}
-#hint{pointer-events:none}
-</style></head><body>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;user-select:none;-webkit-user-select:none;font-family:sans-serif;touch-action:manipulation}canvas{display:block;width:100vw;height:100vh}button{font:inherit;touch-action:none;user-select:none;-webkit-user-select:none;border:0;color:#fff;background:#ff7a00;border-radius:14px;font-weight:bold}#ui{position:fixed;inset:0;box-sizing:border-box;max-height:100vh;overflow:hidden;padding:8px 12px;color:#fff;background:rgba(10,18,30,.72);backdrop-filter:blur(5px);display:none;flex-direction:column;gap:8px}#ui.on{display:flex}.top{height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px}.top button{height:36px;padding:0 12px;font-size:14px}.status{font-size:13px;white-space:nowrap}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#9299a3;margin-right:5px}.dot.connected{background:#27df79}.speed{font-size:13px}.speed input{width:12vw}#cam.active{background:#168b61}.controls{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;align-items:center}.cross{width:min(44vh,240px);height:min(44vh,240px);justify-self:center;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:5px}.cross button{border-radius:50%;font-size:38px;min-width:72px;min-height:72px;padding:0}.cross [data-d=f]{grid-area:1/2}.cross [data-d=l]{grid-area:2/1}.cross [data-d=r]{grid-area:2/3}.cross [data-d=b]{grid-area:3/2}.arms{display:flex;justify-content:center;gap:5vw}.pair{display:flex;flex-direction:column;align-items:center;gap:6px}.pair button{width:clamp(88px,13vw,150px);height:clamp(60px,12vh,100px);font-size:16px}.emotions{display:flex;justify-content:center;gap:7px;flex:none}.emotions button{width:38px;height:38px;border-radius:50%;padding:0;font-size:21px;background:#2b6cb0}#hint{position:fixed;top:6px;right:10px;color:#444;font-size:12px;pointer-events:none}</style></head><body>
 <canvas id="c"></canvas>
 <div id="hint">коснитесь лица — пульт</div>
-<div id="ui">
- <div id="st">не подключён</div>
- <div class="g"><button id="cn">Подключить</button><button class="s" id="hide">Скрыть</button>
-  скорость <input id="sp" type="range" min="30" max="127" value="80"></div>
- <div class="g"><button id="cam" class="s">Камера вкл/выкл</button><button id="sayHello" class="s">Скажи привет</button></div>
- <div class="g">
-  <button data-d="fl">↖</button><button data-d="f">▲</button><button data-d="fr">↗</button>
-  <button data-d="l">◀</button><button data-d="b">▼</button><button data-d="r">▶</button>
- </div>
- <div class="g">
-  <button data-m="0,1">клешня A▲</button><button data-m="0,-1">клешня A▼</button>
-  <button data-m="2,1">рука C▲</button><button data-m="2,-1">рука C▼</button>
- </div>
- <div class="g">
-  <button class="e" data-f="happy">радость</button><button class="e" data-f="sad">грусть</button>
-  <button class="e" data-f="surprise">удивление</button><button class="e" data-f="sleep">сон</button>
-  <button class="e" data-f="angry">злость</button><button class="e" data-f="sly">хитрость</button><button class="e" data-f="think">думает</button><button class="e" data-f="love">любовь</button><button class="e" data-f="normal">обычное</button>
- </div>
-</div>
+<div id="ui"><div class="top"><span class="status"><i id="dot" class="dot"></i><span id="st">не подключён</span></span><button id="cn">Подключить</button><label class="speed">Скорость <input id="sp" type="range" min="30" max="127" value="80"></label><button id="cam" class="s">Камера</button><button id="sayHello" class="s">Скажи привет</button><button id="hide" class="s">✕</button></div><div class="controls"><div class="cross"><button data-d="f">▲</button><button data-d="l">◀</button><button data-d="r">▶</button><button data-d="b">▼</button></div><div class="arms"><div class="pair"><b>Клешня</b><button data-m="0,1">A▲<br>Открыть</button><button data-m="0,-1">A▼<br>Сжать</button></div><div class="pair"><b>Рука</b><button data-m="2,1">C▲<br>Вверх</button><button data-m="2,-1">C▼<br>Вниз</button></div></div></div><div class="emotions"><button data-f="happy">😊</button><button data-f="sad">😢</button><button data-f="surprise">😮</button><button data-f="sleep">😴</button><button data-f="angry">😠</button><button data-f="sly">😏</button><button data-f="think">🤔</button><button data-f="love">❤️</button><button data-f="normal">🙂</button></div></div>
 <script>
 /* ---------- Bluetooth: пакет AC 01 02 01 [8 моторов] сумма 35 ---------- */
 const SVC=0xfff0,CH=0xfff2; let ch=null,m=new Array(8).fill(128),timer=null,stopT=null;
-const st=document.getElementById('st'),sp=document.getElementById('sp');
+const st=document.getElementById('st'),sp=document.getElementById('sp'),dot=document.getElementById('dot');
 const LEFT=1,ARM=2,RIGHT=3,CLAW=0;      // байты 5,6,7,4
 const LEFT_FWD=1,RIGHT_FWD=-1;          // по пульту LEFbox: B вправо и D влево = вперёд
 function pkt(){const p=[0xAC,1,2,1,...m];let s=0;for(const b of p)s+=b;p.push(s&255,0x35);return new Uint8Array(p)}
@@ -48,11 +19,11 @@ function v(dir,k=1){return Math.max(1,Math.min(255,Math.round(128+dir*k*(+sp.val
 document.getElementById('cn').onclick=async()=>{try{
  const d=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'LFL'}],optionalServices:[SVC]});
  st.textContent='подключаю…';const g=await d.gatt.connect();ch=await(await g.getPrimaryService(SVC)).getCharacteristic(CH);
- st.textContent='подключён';face('happy',1500);d.addEventListener('gattserverdisconnected',()=>{ch=null;st.textContent='отключился';face('sad',2000)});
+ st.textContent='Подключён';dot.classList.add('connected');face('happy',1500);d.addEventListener('gattserverdisconnected',()=>{ch=null;dot.classList.remove('connected');st.textContent='Отключился';face('sad',2000)});
  stop()}catch(e){st.textContent='ошибка: '+e.message}};
 function run(){clearInterval(timer);send();timer=setInterval(send,100)}
 function stop(){clearInterval(timer);clearTimeout(stopT);timer=null;m.fill(128);send();setTimeout(send,60)}
-const drive={f:[1,1],b:[-1,-1],l:[-1,1],r:[1,-1],fl:[.4,1],fr:[1,.4]};
+const drive={f:[1,1],b:[-1,-1],l:[-1,1],r:[1,-1]};
 document.querySelectorAll('[data-d]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();const[l,r]=drive[b.dataset.d];
  m.fill(128);m[LEFT]=v(LEFT_FWD*l);m[RIGHT]=v(RIGHT_FWD*r);look(b.dataset.d);run()};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>{stop();look('')}});
 document.querySelectorAll('[data-m]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();const[i,dir]=b.dataset.m.split(',').map(Number);
@@ -67,8 +38,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 
 /* ---------- Лицо ---------- */
 const c=document.getElementById('c'),x=c.getContext('2d');let W,H;
-function rs(){const d=Math.min(devicePixelRatio||1,2);W=c.width=Math.round(innerWidth*d);H=c.height=Math.round(innerHeight*d)}addEventListener('resize',rs);rs();
-let mood='normal',targetMood='normal',lastTouch=performance.now(),blink=0,nextBlink=performance.now()+1800,gx=0,gy=0,tx=0,ty=0,anim=0,moodChanged=performance.now();
+function rs(){const d=Math.min(devicePixelRatio||1,1.25);W=c.width=Math.round(innerWidth*d);H=c.height=Math.round(innerHeight*d)}addEventListener('resize',rs);rs();
+let mood='normal',targetMood='normal',lastTouch=performance.now(),blink=0,nextBlink=performance.now()+1800,gx=0,gy=0,tx=0,ty=0,cameraTX=0,cameraTY=0,anim=0,moodChanged=performance.now();
 let wakeLock=null,talk=0,speaking=false,lastBoundary=0,talkNoise=0;
 function face(f,ms){if(targetMood!==f)moodChanged=performance.now();targetMood=f;lastTouch=performance.now();if(ms)setTimeout(()=>{if(targetMood===f)targetMood='normal'},ms)}
 function look(d){tx=d.includes('l')?-1:d.includes('r')?1:0;ty=d==='b'?1:d.startsWith('f')?-.5:0}
@@ -99,7 +70,7 @@ async function scanFace(){
   else if(mpDetector){const result=mpDetector.detectForVideo(hiddenVideo,performance.now());box=result.detections?.[0]?.boundingBox}
   if(box){const w=hiddenVideo.videoWidth||320,h=hiddenVideo.videoHeight||240,bx=box.originX??box.x,by=box.originY??box.y,cx=bx+box.width/2,cy=by+box.height/2;
    const nx=Math.max(-1,Math.min(1,1-2*cx/w)),ny=Math.max(-1,Math.min(1,2*cy/h-1)),size=box.width/w,now=performance.now();
-   window.faceInfo={seen:true,x:nx,y:ny,size};lastFaceAt=now;tx=nx;ty=ny;
+   window.faceInfo={seen:true,x:nx,y:ny,size};lastFaceAt=now;cameraTX=nx;cameraTY=ny;
    if(!wasSeen)face('happy',800);wasSeen=true;
    const close=size>.45;if(close&&!faceClose)face('surprise',800);faceClose=close;
   }else if(performance.now()-lastFaceAt>3000){wasSeen=false;faceClose=false;tx=ty=0;window.faceInfo={seen:false,x:0,y:0,size:0}}
@@ -109,8 +80,8 @@ let camBusy=false;
 document.getElementById('cam').onclick=async e=>{
  e&&e.stopPropagation();if(camBusy)return;camBusy=true;try{await camToggle()}finally{camBusy=false}};
 async function camToggle(){
- if(cameraStream){cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;hiddenVideo.srcObject=null;clearInterval(cameraTimer);cameraTimer=null;window.faceInfo={seen:false,x:0,y:0,size:0};wasSeen=false;tx=ty=0;return}
- try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});hiddenVideo.muted=true;hiddenVideo.playsInline=true;hiddenVideo.srcObject=cameraStream;try{await hiddenVideo.play()}catch(pe){if(pe.name!=='AbortError')throw pe;await new Promise(r=>setTimeout(r,300));await hiddenVideo.play()}await detectSetup();cameraTimer=setInterval(scanFace,150);scanFace();st.textContent='камера включена'}
+ if(cameraStream){document.getElementById('cam').classList.remove('active');cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;hiddenVideo.srcObject=null;clearInterval(cameraTimer);cameraTimer=null;window.faceInfo={seen:false,x:0,y:0,size:0};wasSeen=false;tx=ty=0;return}
+ try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});hiddenVideo.muted=true;hiddenVideo.playsInline=true;hiddenVideo.srcObject=cameraStream;try{await hiddenVideo.play()}catch(pe){if(pe.name!=='AbortError')throw pe;await new Promise(r=>setTimeout(r,300));await hiddenVideo.play()}await detectSetup();document.getElementById('cam').classList.add('active');cameraTimer=setInterval(scanFace,250);scanFace();st.textContent='камера включена'}
  catch(e){if(cameraStream)cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;st.textContent='Камера недоступна: '+e.message}
 };
 async function enterScreen(){try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(e){}try{await screen.orientation.lock('landscape')}catch(e){}try{wakeLock=await navigator.wakeLock.request('screen')}catch(e){}}
@@ -119,9 +90,8 @@ function wake(){lastTouch=performance.now();if(targetMood==='sleep')face('happy'
 function touchReact(){enterScreen();wake();const a=['happy','surprise','love'];face(a[Math.floor(Math.random()*a.length)],850);anim=1}
 let holdTimer=null,longHold=false;c.addEventListener('pointerdown',e=>{e.preventDefault();holdTimer=setTimeout(()=>{longHold=true;ui.classList.add('on');face('surprise',700)},700)});c.addEventListener('pointerup',()=>{clearTimeout(holdTimer);if(!longHold)touchReact();longHold=false});c.addEventListener('pointercancel',()=>clearTimeout(holdTimer));
 setInterval(()=>{if(performance.now()-lastTouch<120000&&targetMood!=='sleep'){const q=Math.random();if(q<.5){}else if(q<.65)face('surprise',650);else if(q<.8)face('happy',550);else face('sly',700)}},5000);
-function eye(cx,cy,r){const ox=(tx||gx)*r*.35,oy=(ty||gy)*r*.3;x.save();x.translate(cx+ox,cy+oy);const h=r*.68,closed=targetMood==='sleep'?1:targetMood==='sly'?.38:blink;x.fillStyle=targetMood==='love'?'#ff5b91':'#50d9ff';
- if(targetMood==='love'){x.beginPath();x.moveTo(0,h*.4);x.bezierCurveTo(-h*1.2,-h*.5,-h*.5,-h*1.25,0,-h*.45);x.bezierCurveTo(h*.5,-h*1.25,h*1.2,-h*.5,0,h*.4);x.fill()}
- else{x.beginPath();x.ellipse(0,0,h,Math.max(2,h*(1-closed)),0,0,7);x.fill();if(closed<.75){x.fillStyle='#122b49';x.beginPath();x.arc((tx||gx)*r*.12,(ty||gy)*r*.12,h*.43,0,7);x.fill();x.fillStyle='white';x.beginPath();x.arc(h*.2,-h*.2,h*.15,0,7);x.fill();x.beginPath();x.arc(-h*.16,h*.15,h*.07,0,7);x.fill()}}x.restore()}
+const eyePose={top:0,bottom:0,tilt:0,pupil:1,heart:0};
+function eye(cx,cy,r,side){const h=r*.68,open=Math.max(.035,1-(Math.max(eyePose.top,blink)+Math.max(eyePose.bottom,blink))*.82);x.save();x.translate(cx+gx*r*.35,cy+gy*r*.3);x.rotate(eyePose.tilt*side);x.fillStyle='#50d9ff';x.beginPath();x.ellipse(0,0,h,Math.max(2,h*open),0,0,Math.PI*2);x.fill();x.save();x.beginPath();x.ellipse(0,0,h,Math.max(2,h*open),0,0,Math.PI*2);x.clip();x.fillStyle='#122b49';x.beginPath();x.arc(gx*r*.12,gy*r*.12,h*.43*eyePose.pupil,0,Math.PI*2);x.fill();x.fillStyle='white';x.beginPath();x.arc(h*.2,-h*.2,h*.15,0,Math.PI*2);x.fill();x.restore();if(eyePose.heart>0){x.globalAlpha=eyePose.heart;x.fillStyle='#ff5b91';x.beginPath();x.moveTo(0,h*.4);x.bezierCurveTo(-h*1.2,-h*.5,-h*.5,-h*1.25,0,-h*.45);x.bezierCurveTo(h*.5,-h*1.25,h*1.2,-h*.5,0,h*.4);x.fill()}x.restore()}
 const BLUE='#4fd1ff',INSIDE='#102b52',PINK='#ff6f9f';
 // The face features use normalized poses and cross-fade smoothly between filled silhouettes.
 const poses={
@@ -132,6 +102,7 @@ const poses={
  think:{b:[-.21,.03],m:[0,0,0,0,0,1,0,0]},sleep:{b:[.04,.04],m:[0,0,0,0,0,0,1,0]}
 };
 let browPose=[0,0],mouthPose=[0,0,0,0,0,0,0,1];
+const eyeTargets={normal:[0,0,0,1,0],happy:[0,0,0,1,0],love:[0,0,0,.85,1],surprise:[0,0,0,1,0],angry:[.08,.02,.18,.78,0],sad:[.05,.08,-.08,.85,0],sly:[.03,.02,.17,.9,0],think:[.04,.02,.1,.9,0],sleep:[.48,.48,0,.65,0]};
 function mouth(cx,cy,r){
  const shapes=[
   ()=>{x.moveTo(cx-r*.48,cy-r*.08);x.quadraticCurveTo(cx,cy+r*.05,cx+r*.48,cy-r*.08);x.quadraticCurveTo(cx+r*.35,cy+r*.56,cx,cy+r*.62);x.quadraticCurveTo(cx-r*.35,cy+r*.56,cx-r*.48,cy-r*.08)},
@@ -158,11 +129,11 @@ function brow(cx,cy,r,pose,side,t){
  if(side<0){x.moveTo(outer,y1);x.quadraticCurveTo(cx-r*1.62,cyc,inner,y2)}
  else{x.moveTo(inner,y2);x.quadraticCurveTo(cx+r*1.62,cyc,outer,y1)}x.stroke();
 }
-function interpolateFace(dt){const p=poses[targetMood]||poses.normal,k=1-Math.exp(-dt/150);for(let i=0;i<2;i++)browPose[i]+=(p.b[i]-browPose[i])*k;for(let i=0;i<mouthPose.length;i++)mouthPose[i]+=(p.m[i]-mouthPose[i])*k}
-function frame(t){const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;if(t-lastTouch>120000&&targetMood!=='sleep'){targetMood='sleep';moodChanged=t;}if(blink>0)blink=Math.max(0,blink-dt/100);else if(t>nextBlink){blink=1;nextBlink=t+3000+Math.random()*3500}interpolateFace(dt);gx+=(Math.sin(t/2000)*.12-gx)*.025;gy+=(Math.cos(t/2400)*.07-gy)*.025;if(speaking){const elapsed=t-lastBoundary;const pulse=lastBoundary?Math.max(0,1-elapsed/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(pulse,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);anim=Math.max(0,anim-dt/800);mood=targetMood;
- x.fillStyle='#000';x.fillRect(0,0,W,H);const r=Math.min(W/6,H/3.2),breathe=1+Math.sin(t/900)*.012,progress=Math.min(1,(t-moodChanged)/260),ease=1-Math.pow(1-progress,3);x.save();x.globalAlpha=.55+.45*ease;x.translate(0,Math.sin(t/950)*r*.012);x.scale(breathe*(.92+.08*ease),breathe*(.92+.08*ease));
+function interpolateFace(dt){const p=poses[targetMood]||poses.normal,k=1-Math.exp(-dt/150),q=eyeTargets[targetMood]||eyeTargets.normal;for(let i=0;i<2;i++)browPose[i]+=(p.b[i]-browPose[i])*k;for(let i=0;i<mouthPose.length;i++)mouthPose[i]+=(p.m[i]-mouthPose[i])*k;eyePose.top+=(q[0]-eyePose.top)*k;eyePose.bottom+=(q[1]-eyePose.bottom)*k;eyePose.tilt+=(q[2]-eyePose.tilt)*k;eyePose.pupil+=(q[3]-eyePose.pupil)*k;eyePose.heart+=(q[4]-eyePose.heart)*k}
+function frame(t){const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;if(t-lastTouch>120000&&targetMood!=='sleep'){targetMood='sleep';moodChanged=t;}if(blink>0)blink=Math.max(0,blink-dt/100);else if(t>nextBlink){blink=1;nextBlink=t+3000+Math.random()*3500}interpolateFace(dt);const kLook=1-Math.exp(-dt/180),targetGX=cameraStream?cameraTX:tx,targetGY=cameraStream?cameraTY:ty;gx+=(targetGX-gx)*kLook;gy+=(targetGY-gy)*kLook;if(speaking){const elapsed=t-lastBoundary;const pulse=lastBoundary?Math.max(0,1-elapsed/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(pulse,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);anim=Math.max(0,anim-dt/800);mood=targetMood;
+ x.fillStyle='#000';x.fillRect(0,0,W,H);const r=Math.min(W/6,H/3.2),breathe=1+Math.sin(t/900)*.012;x.save();x.translate(0,Math.sin(t/950)*r*.012);x.scale(breathe,breathe);
  if(['happy','love'].includes(mood))for(const q of [-1,1]){x.fillStyle='rgba(255,105,145,.25)';x.beginPath();x.ellipse(W/2+q*r*2.22,H*.48,r*.28,r*.16,0,0,7);x.fill()}
- eye(W/2-r*1.6,H*.42,r);eye(W/2+r*1.6,H*.42,r);
+ eye(W/2-r*1.6,H*.42,r,-1);eye(W/2+r*1.6,H*.42,r,1);
  brow(W/2,H*.42,r,browPose[0],-1,t);brow(W/2,H*.42,r,browPose[1],1,t);mouth(W/2,H*.78,r);
  if(mood==='think'){x.font=`${r*.55}px sans-serif`;x.fillText('…',W/2+r*2.2,H*.22)}if(mood==='sleep'){x.font=`${r*.5}px sans-serif`;x.fillText('z z',W/2+r*2,H*.22+Math.sin(t/400)*10)}x.restore();requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
