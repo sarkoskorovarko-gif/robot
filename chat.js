@@ -35,6 +35,11 @@ function snapshot(){
 const LOOK=/(смотри|посмотри|что это|что у меня|какого цвета|какой цвет|сколько|угадай что|кто это|что я держу)/i;
 
 async function ask(text){
+ if(window.robotFetch){ // «принеси мячик», «отвези маме мишку»
+  const f=text.match(/(?:принеси|отвези|подай|привези|дай)\s+(?:(?:мне|маме|папе|ему|ей)\s+)?([а-яё]+)/i);
+  if(f){robotFetch.go(f[1]);return}
+  if(/^(стоп|хватит|стой)/i.test(text.trim()))robotFetch.stop();
+ }
  if(window.robotLearn){ // голосовой запуск учёбы
   const m=/(почитаем|читать|учиться|учить|урок)/i.test(text)?'auto':/(считать|посчита|счёт|счет)/i.test(text)?'count':/цвет/i.test(text)&&/(игра|угад|учить)/i.test(text)?'colors':null;
   if(m){robotLearn.lesson(m);return}

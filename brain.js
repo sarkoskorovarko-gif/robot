@@ -70,6 +70,7 @@
   window.addEventListener('error',()=>stop());
   window.addEventListener('unhandledrejection',()=>stop());
   function tick(){
+    if(window.robotTask) return; // идёт задание (принеси/учёба) — поведение молчит
     if(!enabled || document.hidden || busy){ if(document.hidden)stop(); return; }
     try {
       const now=performance.now(), info=window.faceInfo||{seen:false};
