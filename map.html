@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Робот — карта</title>
+<style>
+html,body{margin:0;height:100%;background:#111;color:#eee;font-family:sans-serif;user-select:none;-webkit-user-select:none}
+#ov{position:fixed;inset:0;display:flex}
+#map{flex:1;min-width:0;width:0;height:100%;background:#0b1620;touch-action:none}
+#side{width:230px;padding:8px;display:flex;flex-direction:column;gap:6px;background:#1b1b1b}
+button{font-size:16px;padding:10px;border:0;border-radius:10px;background:#ff7a00;color:#fff;touch-action:none}
+button.g{background:#2b6cb0}button.s{background:#555}
+.pad{display:grid;grid-template-columns:repeat(3,60px);gap:4px;justify-content:center}
+.pad button{height:56px;font-size:22px}
+#info{font-size:13px;line-height:1.4;white-space:pre}
+</style></head><body>
+<div id="ov">
+ <canvas id="map"></canvas>
+ <div id="side">
+  <button id="ar">Старт карты (камера сзади)</button>
+  <button id="bt" class="g">Подключить робота</button>
+  <div class="pad">
+   <span></span><button data-d="f">▲</button><span></span>
+   <button data-d="l">◀</button><button data-d="b">▼</button><button data-d="r">▶</button>
+  </div>
+  <label>скорость <input id="sp" type="range" min="30" max="127" value="60"></label>
+  <button class="s" id="clr">Очистить карту</button>
+  <button class="s" id="save">Сохранить карту (файл)</button>
+  <div id="info">не запущено</div>
+ </div>
+</div>
+<script>
+/* ===== Робот (тот же протокол, что в face.html) ===== */
+const SVC=0xfff0,CH=0xfff2,LEFT=1,RIGHT=3,LEFT_FWD=1,RIGHT_FWD=-1;let ch=null,m=new Array(8).fill(128),timer=null;
+const sp=document.getElementById('sp');
+function pkt(){const p=[0xAC,1,2,1,...m];let s=0;for(const b of p)s+=b;p.push(s&255,0x35);return new Uint8Array(p)}
+async function send(){if(!ch)return;try{await ch.writeValueWithoutResponse(pkt())}catch(e){try{await ch.writeValue(pkt())}catch(_){}}}
+function stop(){clearInterval(timer);timer=null;m.fill(128);send();setTimeout(send,60)}
+document.getElementById('bt').onclick=async()=>{try{const d=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'LFL'}],optionalServices:[SVC]});
+ ch=await(await(await d.gatt.connect()).getPrimaryService(SVC)).getCharacteristic(CH);document.getElementById('bt').textContent='Робот подключён';stop()}catch(e){alert(e.message)}};
+const drive={f:[1,1],b:[-1,-1],l:[-1,1],r:[1,-1]};
+document.querySelectorAll('[data-d]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();const[l,r]=drive[b.dataset.d],v=+sp.value;
+ m.fill(128);m[LEFT]=128+LEFT_FWD*l*v;m[RIGHT]=128+RIGHT_FWD*r*v;send();clearInterval(timer);timer=setInterval(send,100)};
+ b.onpointerup=b.onpointerleave=b.onpointercancel=stop});
+
+/* ===== Карта: сетка 5 см, путь, пол, препятствия ===== */
+const CELL=0.05;           // 5 см
+const grid=new Map();      // "ix,iz" -> {floor:n, obst:n}
+let path=[];               // [x,z] позиции телефона (м)
+let pose=null,heading=0,floorY=null;
+function cell(x,z){const k=Math.round(x/CELL)+','+Math.round(z/CELL);let c=grid.get(k);if(!c){c={f:0,o:0};grid.set(k,c)}return c}
+function load(){try{const s=JSON.parse(localStorage.getItem('robotMap')||'null');if(s){path=s.path||[];for(const[k,v]of s.grid||[])grid.set(k,v)}}catch(e){}}
+function persist(){try{localStorage.setItem('robotMap',JSON.stringify({path:path.slice(-5000),grid:[...grid]}))}catch(e){}}
+load();
+document.getElementById('clr').onclick=()=>{grid.clear();path=[];persist()};
+document.getElementById('save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([localStorage.getItem('robotMap')||'{}'],{type:'application/json'}));a.download='robot-map.json';a.click()};
+
+const cv=document.getElementById('map'),g=cv.getContext('2d');let view={s:120,cx:0,cz:0};
+function draw(){
+ const W=cv.width=cv.clientWidth,H=cv.height=cv.clientHeight;g.fillStyle='#0b1620';g.fillRect(0,0,W,H);
+ if(pose){view.cx+=(pose.x-view.cx)*.1;view.cz+=(pose.z-view.cz)*.1}
+ const X=x=>W/2+(x-view.cx)*view.s,Z=z=>H/2+(z-view.cz)*view.s,cs=CELL*view.s+1;
+ g.strokeStyle='#18303f';g.lineWidth=1;for(let i=-20;i<=20;i++){const gx=X(Math.round(view.cx)+i),gz=Z(Math.round(view.cz)+i);g.beginPath();g.moveTo(gx,0);g.lineTo(gx,H);g.moveTo(0,gz);g.lineTo(W,gz);g.stroke()}
+ for(const[k,c]of grid){const[i,j]=k.split(',').map(Number),px=X(i*CELL)-cs/2,pz=Z(j*CELL)-cs/2;
+  if(c.o>2){g.fillStyle='#e05050';g.fillRect(px,pz,cs,cs)}else if(c.f>0){g.fillStyle='#2a5d4a';g.fillRect(px,pz,cs,cs)}}
+ g.strokeStyle='#4fd1ff';g.lineWidth=3;g.beginPath();path.forEach(([x,z],i)=>i?g.lineTo(X(x),Z(z)):g.moveTo(X(x),Z(z)));g.stroke();
+ if(pose){g.save();g.translate(X(pose.x),Z(pose.z));g.rotate(-heading);g.fillStyle='#ff7a00';g.beginPath();g.moveTo(0,-14);g.lineTo(9,10);g.lineTo(-9,10);g.fill();g.restore()}
+ g.fillStyle='#8aa';g.font='12px sans-serif';g.fillText('клетка сетки = 1 м · зелёное = пол · красное = препятствие · стрелка = куда смотрит задняя камера',8,H-8);
+}
+cv.addEventListener('wheel',e=>{view.s*=e.deltaY<0?1.1:.9});
+let pinch=null;cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch)view.s=Math.max(20,Math.min(600,view.s*d/pinch));pinch=d}},{passive:true});
+cv.addEventListener('touchend',()=>pinch=null);
+
+/* ===== WebXR (ARCore) ===== */
+const info=document.getElementById('info');let session=null,refSpace=null,hitSrc=null,lastPathAt=0,lastSave=0,depthOk=false;
+document.getElementById('ar').onclick=async()=>{
+ if(session){session.end();return}
+ if(!navigator.xr||!await navigator.xr.isSessionSupported('immersive-ar')){info.textContent='AR не поддерживается\n(нужен Chrome и «Сервисы Google Play для AR»)';return}
+ try{
+  session=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local-floor'],optionalFeatures:['dom-overlay','hit-test','depth-sensing'],
+   domOverlay:{root:document.getElementById('ov')},depthSensing:{usagePreference:['cpu-optimized'],dataFormatPreference:['luminance-alpha','float32']}});
+ }catch(e){info.textContent='Не запустилось: '+e.message;session=null;return}
+ const gl=document.createElement('canvas').getContext('webgl',{xrCompatible:true});
+ session.updateRenderState({baseLayer:new XRWebGLLayer(session,gl)});
+ refSpace=await session.requestReferenceSpace('local-floor');
+ try{hitSrc=await session.requestHitTestSource({space:await session.requestReferenceSpace('viewer')})}catch(e){}
+ depthOk=!!session.depthUsage;
+ document.getElementById('ar').textContent='Стоп карты';
+ session.addEventListener('end',()=>{session=null;document.getElementById('ar').textContent='Старт карты (камера сзади)';persist()});
+ session.requestAnimationFrame(onXR);
+};
+function onXR(t,frame){
+ const s=frame.session;s.requestAnimationFrame(onXR);
+ const gl=s.renderState.baseLayer.context;gl.bindFramebuffer(gl.FRAMEBUFFER,s.renderState.baseLayer.framebuffer);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT); // камеру не показываем
+ const vp=frame.getViewerPose(refSpace);
+ if(!vp){info.textContent='ищу опору… медленно поводите\n(нужны детали в кадре, не голая стена)';return}
+ const p=vp.transform.position,o=vp.transform.orientation;
+ // направление взгляда задней камеры (ось -Z), проекция на пол
+ const fx=-2*(o.x*o.z+o.w*o.y),fz=-(1-2*(o.x*o.x+o.y*o.y));heading=Math.atan2(fx,-fz);
+ pose={x:p.x,z:p.z};
+ if(t-lastPathAt>150){const l=path[path.length-1];if(!l||Math.hypot(l[0]-p.x,l[1]-p.z)>.03)path.push([p.x,p.z]);lastPathAt=t;cell(p.x,p.z).f++}
+ // пол перед камерой
+ if(hitSrc){const h=frame.getHitTestResults(hitSrc)[0];if(h){const hp=h.getPose(refSpace).transform.position;if(Math.abs(hp.y)<.15)cell(hp.x,hp.z).f++}}
+ // препятствия по карте глубины: точки центральной полосы ближе 1,5 м и выше пола на 5–40 см
+ if(depthOk){const v=vp.views[0];let d=null;try{d=frame.getDepthInformation(v)}catch(e){}
+  if(d){for(let u=.1;u<=.9;u+=.1){const dist=d.getDepthInMeters(u,.5);if(dist>.15&&dist<1.5){
+   const ang=(u-.5)*1.0;const wx=p.x+(fx*Math.cos(ang)-fz*Math.sin(ang))*dist,wz=p.z+(fz*Math.cos(ang)+fx*Math.sin(ang))*dist;
+   const c=cell(wx,wz);c.o++}}}}
+ if(t-lastSave>3000){persist();lastSave=t}
+ draw(); // во время AR обычный requestAnimationFrame страницы стоит
+ info.textContent=`позиция: ${p.x.toFixed(2)}, ${p.z.toFixed(2)} м\nвысота камеры: ${p.y.toFixed(2)} м\nкурс: ${(heading*180/Math.PI).toFixed(0)}°\nпуть: ${path.length} точек\nглубина: ${depthOk?'есть':'нет'}`;
+}
+(function loop(){draw();requestAnimationFrame(loop)})();
+</script></body></html>
