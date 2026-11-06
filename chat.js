@@ -36,6 +36,7 @@ const LOOK=/(смотри|посмотри|что это|что у меня|ка
 
 async function ask(text){
  if(window.robotFetch){ // «принеси мячик», «отвези маме мишку»
+  if(/запомни расстояние/i.test(text)){const m=text.match(/расстояние\s+(?:до\s+)?([а-яё]+)/i);robotFetch.calibrate(m?m[1]:'мячик');return}
   const f=text.match(/(?:принеси|отвези|подай|привези|дай)\s+(?:(?:мне|маме|папе|ему|ей)\s+)?([а-яё]+)/i);
   if(f){robotFetch.go(f[1]);return}
   if(/^(стоп|хватит|стой)/i.test(text.trim()))robotFetch.stop();

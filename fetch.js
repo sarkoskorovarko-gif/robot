@@ -8,6 +8,14 @@ const CFG={
  personSize:.28,    // лицо такого размера = человек рядом
  armDownMs:900, armUpMs:800, nudgeMs:350
 };
+try{Object.assign(CFG,JSON.parse(localStorage.getItem('robotFetchCfg')||'{}'))}catch(e){}
+const saveCfg=()=>{try{localStorage.setItem('robotFetchCfg',JSON.stringify(CFG))}catch(e){}};
+// Настройка: положи предмет прямо перед раскрытой клешнёй и скажи «запомни расстояние».
+async function calibrate(item='мячик'){
+ const o=await vision.find(norm(item));
+ if(!o){window.say&&say('Не вижу предмет, поставь его передо мной.','sad');return null}
+ CFG.grabSize=+(o.w*.95).toFixed(2);CFG.grabBottom=+Math.min(.98,o.y+o.h-.03).toFixed(2);saveCfg();
+ window.say&&say('Запомнил! Отсюда буду хватать.','happy');return {...CFG}}
 const r=window.robot,wait=ms=>new Promise(x=>setTimeout(x,ms));
 let running=false;
 const sayW=async(t,m)=>{window.say&&say(t,m);await wait(300);while((typeof speaking!=='undefined'&&speaking)||speechSynthesis.speaking)await wait(200)};
@@ -67,7 +75,7 @@ async function go(item){
   r.drive(-1,-1,400);await wait(550);r.claw('close');await wait(400);r.arm('up',500);
  }finally{r.stop();running=false;window.robotTask=null}
 }
-window.robotFetch={go,stop(){running=false;r&&r.stop()},CFG,norm};
+window.robotFetch={go,calibrate,stop(){running=false;r&&r.stop()},CFG,norm,save:saveCfg,reset(){localStorage.removeItem('robotFetchCfg')}};
 // ладонь = стоп и для этого задания
 window.addEventListener('robot-gesture',e=>{if(e.detail?.name==='Open_Palm'&&running){running=false;r.stop()}});
 })();
