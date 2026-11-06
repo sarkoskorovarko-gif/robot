@@ -142,7 +142,7 @@ window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get 
 function upd(){kb.textContent=robotChat.hasKey()?"Ключ Haiku: есть":"Ключ Haiku: нет";lb.textContent="Слушать: "+(robotChat.auto?"вкл":"выкл")}
 kb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ API Anthropic (вставьте сами, хранится только на этом телефоне):","");if(k)robotChat.setKey(k);upd()};
 lb.onclick=e=>{e.stopPropagation();if(robotChat.auto){robotChat.stop()}else{robotChat.auto=true;if(!robotChat.listen())alert("Распознавание речи недоступно")}upd()};
-const vb=document.getElementById("voiceBtn");function vu(){vb.textContent=robotVoice.hasKey()?"Голос: ElevenLabs":"Голос: встроенный"}
-vb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ ElevenLabs (пусто = не менять):","");if(k)robotVoice.setKey(k);const v=prompt("ID голоса ElevenLabs (пусто = первый из библиотеки):","");if(v)robotVoice.setVoice(v);vu();say("Привет! Вот мой новый голос!","happy")};vu();
+const vb=document.getElementById("voiceBtn");function vu(){vb.textContent=robotVoice.hasKey()?"Голос: облачный":"Голос: встроенный"}
+vb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ голоса: Google Cloud (AIza…) или ElevenLabs. Пусто = не менять:","");if(k)robotVoice.setKey(k);const v=prompt("Имя голоса (Google: например ru-RU-Chirp3-HD-Leda, ru-RU-Chirp3-HD-Puck). Пусто = по умолчанию:","");if(v)robotVoice.setVoice(v);vu();say("Привет! Вот мой новый голос!","happy")};vu();
 upd()})();
 </script></body></html>

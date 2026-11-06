@@ -24,12 +24,23 @@ async function elevenSay(text,mood='normal'){
  if(!key)return builtinSay(text,mood);
  face(mood,Math.max(1400,text.length*90));
  try{
-  const vid=await voiceId(key);
-  const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}?optimize_streaming_latency=3&output_format=mp3_44100_64`,{
-   method:'POST',headers:{'xi-api-key':key,'content-type':'application/json',accept:'audio/mpeg'},
-   body:JSON.stringify({text,model_id:'eleven_flash_v2_5',voice_settings:{stability:.4,similarity_boost:.8,style:.5}})});
-  if(!r.ok)throw new Error(r.status);
-  const url=URL.createObjectURL(await r.blob());
+  let url;
+  if(key.startsWith('AIza')){ // Google Cloud Text-to-Speech
+   const name=get(VOICE)||'ru-RU-Chirp3-HD-Leda';
+   const r=await fetch('https://texttospeech.googleapis.com/v1/text:synthesize',{method:'POST',
+    headers:{'content-type':'application/json','X-Goog-Api-Key':key},
+    body:JSON.stringify({input:{text},voice:{languageCode:'ru-RU',name},audioConfig:{audioEncoding:'MP3',speakingRate:1.05}})});
+   if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,150));
+   const j=await r.json();const bin=atob(j.audioContent);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+   url=URL.createObjectURL(new Blob([u8],{type:'audio/mpeg'}));
+  } else { // ElevenLabs
+   const vid=await voiceId(key);
+   const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}?optimize_streaming_latency=3&output_format=mp3_44100_64`,{
+    method:'POST',headers:{'xi-api-key':key,'content-type':'application/json',accept:'audio/mpeg'},
+    body:JSON.stringify({text,model_id:'eleven_flash_v2_5',voice_settings:{stability:.4,similarity_boost:.8,style:.5}})});
+   if(!r.ok)throw new Error(r.status);
+   url=URL.createObjectURL(await r.blob());
+  }
   if(cur){cur.pause();URL.revokeObjectURL(cur.src)}
   cur=new Audio(url);
   if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();analyser=ctx.createAnalyser();analyser.fftSize=512;buf=new Uint8Array(analyser.fftSize);analyser.connect(ctx.destination)}
