@@ -19,12 +19,24 @@ async function voiceId(key){
  const j=await r.json();v=(j.voices||[])[0]?.voice_id;if(v)try{localStorage.setItem(VOICE,v)}catch(e){}
  return v;
 }
+// дневной лимит облачного голоса (секунд новой озвучки), повторы из памяти не считаются
+const LIMIT_SEC=20*60;
+function today(){return new Date().toISOString().slice(0,10)}
+function usage(){try{const u=JSON.parse(localStorage.getItem('robotVoiceUse')||'{}');return u.d===today()?u:{d:today(),s:0}}catch(e){return{d:today(),s:0}}}
+function addUsed(sec){const u=usage();u.s+=sec;try{localStorage.setItem('robotVoiceUse',JSON.stringify(u))}catch(e){}}
+function overLimit(){return usage().s>=LIMIT_SEC}
 async function elevenSay(text,mood='normal'){
  const key=get(KEY)||get('robotApiKey'); // нет отдельного ключа голоса → тот же ключ OpenRouter
  if(!key)return builtinSay(text,mood);
  face(mood,Math.max(1400,text.length*90));
  try{
-  let url;
+  let url,fresh=false;
+  const voiceName=get(VOICE)||'default',ck='https://robot.cache/tts/'+encodeURIComponent(voiceName+'|'+text.trim().toLowerCase());
+  let cache=null;try{cache=await caches.open('robot-voice')}catch(e){}
+  const hit=cache&&await cache.match(ck);
+  if(hit){url=URL.createObjectURL(await hit.blob())}            // уже говорил эту фразу — бесплатно
+  else if(overLimit()){return builtinSay(text,mood)}            // дневной лимит облачного голоса исчерпан
+  else{fresh=true;
   if(key.startsWith('sk-or-')){ // OpenRouter: озвучка моделью gpt-audio-mini
    const voice=get(VOICE)||'coral';
    const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
@@ -61,8 +73,12 @@ async function elevenSay(text,mood='normal'){
    if(!r.ok)throw new Error(r.status);
    url=URL.createObjectURL(await r.blob());
   }
+  // запомнить фразу (короткие — до 120 символов, чтобы не забивать память длинными ответами)
+  if(cache&&text.length<=120){try{await cache.put(ck,new Response(await (await fetch(url)).blob()))}catch(e){}}
+  }
   if(cur){cur.pause();URL.revokeObjectURL(cur.src)}
   cur=new Audio(url);
+  if(fresh)cur.addEventListener('loadedmetadata',()=>addUsed(cur.duration||text.length/12));
   if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();analyser=ctx.createAnalyser();analyser.fftSize=512;buf=new Uint8Array(analyser.fftSize);analyser.connect(ctx.destination)}
   if(ctx.state==='suspended')await ctx.resume();
   ctx.createMediaElementSource(cur).connect(analyser);
