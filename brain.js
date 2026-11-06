@@ -33,6 +33,17 @@
   function claw(which){ limb(r.CLAW,which==='open'?1:-1,350); }
   function arm(which,ms=500){ limb(r.ARM,which==='up'?1:-1,Math.min(1200,ms)); }
   r.drive=drive; r.claw=claw; r.arm=arm;
+  window.addEventListener('robot-gesture',e=>{
+    const name=e.detail?.name;
+    if(name==='Open_Palm'){stop();r.face('surprise');pauseUntil=performance.now()+5000;return;}
+    if(!enabled)return;
+    if(name==='Thumb_Up'){r.face('happy',1200);window.dispatchEvent(new CustomEvent('robot-action',{detail:'nod'}));}
+    else if(name==='Victory')dance();
+    else if(name==='Pointing_Up')arm('up',700);
+    else if(name==='Closed_Fist')claw('close');
+    else if(name==='Thumb_Down')r.face('sad',1200);
+    else if(name==='ILoveYou')r.face('love',1400);
+  });
   async function dance(){
     if(busy || !enabled || !r.ch) return;
     busy=true; setState('play'); r.face('happy');

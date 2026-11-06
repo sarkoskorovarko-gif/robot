@@ -32,10 +32,27 @@ function snapshot(){
  const g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(v,0,0,c.width,c.height); // зеркально, как видит ребёнок
  return c.toDataURL('image/jpeg',.7);
 }
-const LOOK=/(смотри|посмотри|видишь|что это|что у меня|какого цвета|какой цвет|сколько|покажу|угадай что|кто это|что я держу)/i;
+const LOOK=/(смотри|посмотри|что это|что у меня|какого цвета|какой цвет|сколько|угадай что|кто это|что я держу)/i;
 
 async function ask(text){
- const key=get(KEY); if(!key){window.say&&say('Меня ещё не подключили к думалке.','sad');return}
+ if(window.robotLearn){ // голосовой запуск учёбы
+  const m=/(почитаем|читать|учиться|учить|урок)/i.test(text)?'auto':/(считать|посчита|счёт|счет)/i.test(text)?'count':/цвет/i.test(text)&&/(игра|угад|учить)/i.test(text)?'colors':null;
+  if(m){robotLearn.lesson(m);return}
+ }
+ const key=get(KEY);
+ let cameraNote='';
+ if(window.vision){
+  if(/что ты видишь|что видишь|что вокруг/i.test(text)){
+   const items=await window.vision.lookAround();cameraNote=items.length?' [камера: вижу '+items.slice(0,5).map(o=>o.ru||o.name).join(', ')+']':' [камера: пока ничего не распознала]';
+  }else if(/найди|где|принеси|покажи где/i.test(text)){
+   const classes=['sports ball','teddy bear','cup','bottle','book','chair','couch','bed','cat','dog','cell phone','apple','banana','orange','car','scissors','umbrella','backpack','clock','vase','potted plant','remote','laptop','bowl','toy'];
+   const aliases={'sports ball':['мячик','мяч'],'teddy bear':['мишка','медведь'],'cup':['кружка'],'bottle':['бутылка'],'book':['книга'],'chair':['стул'],'couch':['диван'],'bed':['кровать'],'cat':['кот','кошка'],'dog':['собака','пёс'],'cell phone':['телефон'],'apple':['яблоко'],'banana':['банан'],'orange':['апельсин'],'car':['машинка','машина'],'scissors':['ножницы'],'umbrella':['зонт'],'backpack':['рюкзак'],'clock':['часы'],'vase':['ваза'],'potted plant':['растение','цветок'],'remote':['пульт'],'laptop':['ноутбук'],'bowl':['миска']};
+   let wanted=null;for(const en of classes){const words=[en,...(aliases[en]||[])];if(words.some(w=>new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))){wanted=(aliases[en]||[])[0]||en;break}}
+   if(wanted){const o=await window.vision.find(wanted);cameraNote=o?' [камера: вижу '+o.ru+' '+(o.x<-.2?'слева':o.x>.2?'справа':'по центру')+']':' [камера: не нашёл]'}
+  }
+ }
+ text+=cameraNote;
+ if(!key){window.say&&say(cameraNote?'Я посмотрела камерой!':'Меня ещё не подключили к думалке.','sad');return}
  window.face&&face('think');
  const img=LOOK.test(text)?snapshot():null;
  hist.push({role:'user',content:text}); hist=hist.slice(-12);

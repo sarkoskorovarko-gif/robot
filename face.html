@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <link rel="manifest" href="manifest.webmanifest">
@@ -54,34 +54,20 @@ function say(text,moodName='normal'){
  speechSynthesis.speak(utterance);
 }
 document.getElementById('sayHello').onclick=()=>say('Привет! Я твой робот. Давай дружить!','happy');
-let cameraStream=null,detector=null,mpDetector=null,cameraTimer=null,lastFaceAt=0,wasSeen=false,faceClose=false;
+let cameraStream=null,wasSeen=false,faceClose=false;
 const hiddenVideo=document.createElement('video');hiddenVideo.autoplay=true;hiddenVideo.muted=true;hiddenVideo.playsInline=true;hiddenVideo.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';document.body.appendChild(hiddenVideo);
-async function detectSetup(){
- if('FaceDetector'in window){try{detector=new FaceDetector({fastMode:true,maxDetectedFaces:1});return}catch(e){}}
- const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
- const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
- mpDetector=await vision.FaceDetector.createFromOptions(files,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'},runningMode:'VIDEO',minDetectionConfidence:.5});
+function scanFace(){
+ const fi=window.faceInfo||{};
+ if(fi.seen){cameraTX=fi.x||0;cameraTY=fi.y||0;if(!wasSeen)face('happy',800);wasSeen=true;const close=fi.size>.45;if(close&&!faceClose)face('surprise',800);faceClose=close}
+ else if(wasSeen){wasSeen=false;faceClose=false;tx=ty=0}
 }
-async function scanFace(){
- if(!cameraStream||hiddenVideo.readyState<2)return;
- try{
-  let box=null;
-  if(detector){const result=await detector.detect(hiddenVideo);box=result.faces?.[0]?.boundingBox}
-  else if(mpDetector){const result=mpDetector.detectForVideo(hiddenVideo,performance.now());box=result.detections?.[0]?.boundingBox}
-  if(box){const w=hiddenVideo.videoWidth||320,h=hiddenVideo.videoHeight||240,bx=box.originX??box.x,by=box.originY??box.y,cx=bx+box.width/2,cy=by+box.height/2;
-   const nx=Math.max(-1,Math.min(1,1-2*cx/w)),ny=Math.max(-1,Math.min(1,2*cy/h-1)),size=box.width/w,now=performance.now();
-   window.faceInfo={seen:true,x:nx,y:ny,size};lastFaceAt=now;cameraTX=nx;cameraTY=ny;
-   if(!wasSeen)face('happy',800);wasSeen=true;
-   const close=size>.45;if(close&&!faceClose)face('surprise',800);faceClose=close;
-  }else if(performance.now()-lastFaceAt>3000){wasSeen=false;faceClose=false;tx=ty=0;window.faceInfo={seen:false,x:0,y:0,size:0}}
- }catch(e){if(performance.now()-lastFaceAt>3000){wasSeen=false;tx=ty=0;window.faceInfo={seen:false,x:0,y:0,size:0}}}
-}
+window.addEventListener('face-update',scanFace);
 let camBusy=false;
 document.getElementById('cam').onclick=async e=>{
  e&&e.stopPropagation();if(camBusy)return;camBusy=true;try{await camToggle()}finally{camBusy=false}};
 async function camToggle(){
- if(cameraStream){document.getElementById('cam').classList.remove('active');cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;hiddenVideo.srcObject=null;clearInterval(cameraTimer);cameraTimer=null;window.faceInfo={seen:false,x:0,y:0,size:0};wasSeen=false;tx=ty=0;return}
- try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});hiddenVideo.muted=true;hiddenVideo.playsInline=true;hiddenVideo.srcObject=cameraStream;try{await hiddenVideo.play()}catch(pe){if(pe.name!=='AbortError')throw pe;await new Promise(r=>setTimeout(r,300));await hiddenVideo.play()}await detectSetup();document.getElementById('cam').classList.add('active');cameraTimer=setInterval(scanFace,250);scanFace();st.textContent='камера включена'}
+ if(cameraStream){document.getElementById('cam').classList.remove('active');cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;hiddenVideo.srcObject=null;window.vision.stop();window.faceInfo={seen:false,x:0,y:0,size:0};wasSeen=false;tx=ty=0;return}
+ try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});hiddenVideo.muted=true;hiddenVideo.playsInline=true;hiddenVideo.srcObject=cameraStream;try{await hiddenVideo.play()}catch(pe){if(pe.name!=='AbortError')throw pe;await new Promise(r=>setTimeout(r,300));await hiddenVideo.play()}window.vision.start(hiddenVideo);document.getElementById('cam').classList.add('active');st.textContent='камера включена'}
  catch(e){if(cameraStream)cameraStream.getTracks().forEach(track=>track.stop());cameraStream=null;st.textContent='Камера недоступна: '+e.message}
 };
 async function enterScreen(){try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(e){}try{await screen.orientation.lock('landscape')}catch(e){}try{wakeLock=await navigator.wakeLock.request('screen')}catch(e){}}
@@ -137,7 +123,7 @@ function frame(t){const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;if(t-last
  brow(W/2,H*.42,r,browPose[0],-1,t);brow(W/2,H*.42,r,browPose[1],1,t);mouth(W/2,H*.78,r);
  if(mood==='think'){x.font=`${r*.55}px sans-serif`;x.fillText('…',W/2+r*2.2,H*.22)}if(mood==='sleep'){x.font=`${r*.5}px sans-serif`;x.fillText('z z',W/2+r*2,H*.22+Math.sin(t/400)*10)}x.restore();requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
-window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script>
+window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script>
 (function(){const kb=document.getElementById("keyBtn"),lb=document.getElementById("listenBtn");
 function upd(){kb.textContent=robotChat.hasKey()?"Ключ Haiku: есть":"Ключ Haiku: нет";lb.textContent="Слушать: "+(robotChat.auto?"вкл":"выкл")}
 kb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ API Anthropic (вставьте сами, хранится только на этом телефоне):","");if(k)robotChat.setKey(k);upd()};
