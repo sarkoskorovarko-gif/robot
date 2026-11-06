@@ -15,11 +15,20 @@ async function ask(text){
  const key=getKey(); if(!key){window.say&&say('Меня ещё не подключили к думалке.','sad');return}
  hist.push({role:'user',content:text}); hist=hist.slice(-12);
  window.face&&face('think');
- const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{
-   'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-  body:JSON.stringify({model:MODEL,max_tokens:200,system:SYSTEM,messages:hist})});
- if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
- const j=await r.json(); const raw=(j.content||[]).map(c=>c.text||'').join('');
+ let raw;
+ if(key.startsWith('sk-or-')){ // OpenRouter (формат OpenAI)
+  const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{
+    'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
+   body:JSON.stringify({model:'anthropic/claude-haiku-5.5',max_tokens:200,messages:[{role:'system',content:SYSTEM},...hist]})});
+  if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
+  const j=await r.json(); raw=j.choices?.[0]?.message?.content||'';
+ } else { // напрямую Anthropic
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{
+    'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+   body:JSON.stringify({model:MODEL,max_tokens:200,system:SYSTEM,messages:hist})});
+  if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
+  const j=await r.json(); raw=(j.content||[]).map(c=>c.text||'').join('');
+ }
  hist.push({role:'assistant',content:raw});
  let o; try{o=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1))}catch(e){o={say:raw,mood:'happy',action:'none'}}
  window.dispatchEvent(new CustomEvent('robot-action',{detail:o.action||'none'}));
