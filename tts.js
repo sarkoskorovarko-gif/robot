@@ -20,12 +20,32 @@ async function voiceId(key){
  return v;
 }
 async function elevenSay(text,mood='normal'){
- const key=get(KEY);
+ const key=get(KEY)||get('robotApiKey'); // нет отдельного ключа голоса → тот же ключ OpenRouter
  if(!key)return builtinSay(text,mood);
  face(mood,Math.max(1400,text.length*90));
  try{
   let url;
-  if(key.startsWith('AIza')){ // Google Cloud Text-to-Speech
+  if(key.startsWith('sk-or-')){ // OpenRouter: озвучка моделью gpt-audio-mini
+   const voice=get(VOICE)||'coral';
+   const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+    headers:{'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
+    body:JSON.stringify({model:'openai/gpt-audio-mini',modalities:['text','audio'],audio:{voice,format:'pcm16'},stream:true,
+     messages:[{role:'system',content:'Ты голос весёлого доброго маленького робота-друга для ребёнка. Произнеси текст пользователя дословно по-русски, живо, тепло, с улыбкой. Ничего не добавляй.'},{role:'user',content:text}]})});
+   if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,150));
+   // поток SSE: кусочки PCM16 24 кГц в base64 → WAV
+   const rd=r.body.getReader(),dec=new TextDecoder();let rest='',parts=[];
+   for(;;){const{done,value}=await rd.read();if(done)break;rest+=dec.decode(value,{stream:true});
+    const lines=rest.split('\n');rest=lines.pop();
+    for(const l of lines){if(!l.startsWith('data: ')||l.includes('[DONE]'))continue;
+     try{const d=JSON.parse(l.slice(6)).choices?.[0]?.delta?.audio?.data;if(d)parts.push(d)}catch(e){}}}
+   const pcm=parts.map(b=>{const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u});
+   const len=pcm.reduce((a,u)=>a+u.length,0);if(!len)throw new Error('нет звука');
+   const wav=new Uint8Array(44+len),dv=new DataView(wav.buffer);const W=(o,str)=>{for(let i=0;i<str.length;i++)wav[o+i]=str.charCodeAt(i)};
+   W(0,'RIFF');dv.setUint32(4,36+len,true);W(8,'WAVEfmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+   dv.setUint32(24,24000,true);dv.setUint32(28,48000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);W(36,'data');dv.setUint32(40,len,true);
+   let o=44;for(const u of pcm){wav.set(u,o);o+=u.length}
+   url=URL.createObjectURL(new Blob([wav],{type:'audio/wav'}));
+  } else if(key.startsWith('AIza')){ // Google Cloud Text-to-Speech
    const name=get(VOICE)||'ru-RU-Chirp3-HD-Leda';
    const r=await fetch('https://texttospeech.googleapis.com/v1/text:synthesize',{method:'POST',
     headers:{'content-type':'application/json','X-Goog-Api-Key':key},
@@ -56,6 +76,6 @@ if(window.robot)try{window.robot.say=elevenSay}catch(e){}
 window.robotVoice={
  setKey(k){try{localStorage.setItem(KEY,k.trim());localStorage.removeItem(VOICE)}catch(e){}},
  setVoice(v){try{localStorage.setItem(VOICE,v.trim())}catch(e){}},
- hasKey(){return !!get(KEY)}
+ hasKey(){return !!(get(KEY)||get('robotApiKey'))}
 };
 })();
