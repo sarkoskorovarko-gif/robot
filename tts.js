@@ -38,7 +38,7 @@ async function elevenSay(text,mood='normal'){
   else if(overLimit()){return builtinSay(text,mood)}            // дневной лимит облачного голоса исчерпан
   else{fresh=true;
   if(key.startsWith('sk-or-')){ // OpenRouter: озвучка моделью gpt-audio-mini
-   const voice=get(VOICE)||'coral';
+   const voice=/^[a-z]+$/.test(get(VOICE))?get(VOICE):'coral'; // только имена голосов OpenAI
    const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
     headers:{'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
     body:JSON.stringify({model:'openai/gpt-audio-mini',modalities:['text','audio'],audio:{voice,format:'pcm16'},stream:true,
