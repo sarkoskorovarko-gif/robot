@@ -35,6 +35,7 @@ function snapshot(){
 const LOOK=/(смотри|посмотри|что это|что у меня|какого цвета|какой цвет|сколько|угадай что|кто это|что я держу)/i;
 
 async function ask(text){
+ if(window.robotVoice&&/(смени|поменяй|другой)\s+голос/i.test(text)){robotVoice.next();return}
  if(window.robotFetch){ // «принеси мячик», «отвези маме мишку»
   if(/запомни расстояние/i.test(text)){const m=text.match(/расстояние\s+(?:до\s+)?([а-яё]+)/i);robotFetch.calibrate(m?m[1]:'мячик');return}
   const f=text.match(/(?:принеси|отвези|подай|привези|дай)\s+(?:(?:мне|маме|папе|ему|ей)\s+)?([а-яё]+)/i);
