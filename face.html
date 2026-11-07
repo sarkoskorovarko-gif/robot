@@ -28,8 +28,8 @@ document.querySelectorAll('[data-d]').forEach(b=>{b.onpointerdown=e=>{e.preventD
  m.fill(128);m[LEFT]=v(LEFT_FWD*l);m[RIGHT]=v(RIGHT_FWD*r);look(b.dataset.d);run()};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>{stop();look('')}});
 document.querySelectorAll('[data-m]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();const[i,dir]=b.dataset.m.split(',').map(Number);
  m.fill(128);
- if(i===CLAW){m[i]=Math.round(128+dir*45);run();stopT=setTimeout(stop,1500)} // клешня: тихо и не дольше 1,5 с
- else{m[i]=v(dir,.7);run()}};
+ if(i===CLAW){m[i]=Math.round(128+dir*75);run();stopT=setTimeout(stop,1500)} // клешня: тихо и не дольше 1,5 с
+ else{m[i]=v(dir,1);run()}};
  b.onpointerup=b.onpointerleave=b.onpointercancel=stop});
 document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>face(b.dataset.f));
 document.getElementById('hide').onclick=e=>{e.stopPropagation();ui.classList.remove('on')};

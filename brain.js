@@ -27,11 +27,13 @@
   }
   function limb(index,dir,ms){
     stop(); if(!enabled || document.hidden || !r.ch) return;
-    r.m.fill(128); r.m[index]=Math.round(128+dir*(index===r.CLAW?35:Math.min(70,+r.speed*.55)));
-    r.run(); moveTimer=setTimeout(stop,Math.max(1,Math.min(index===r.CLAW?700:1200,ms)));
+    // мощность: клешня и рука сильнее (было 35 и 70 — не хватало)
+    const pw=JSON.parse(localStorage.getItem('robotLimbPower')||'{"claw":75,"arm":110}');
+    r.m.fill(128); r.m[index]=Math.round(128+dir*(index===r.CLAW?pw.claw:pw.arm));
+    r.run(); moveTimer=setTimeout(stop,Math.max(1,Math.min(index===r.CLAW?1400:2000,ms)));
   }
-  function claw(which){ limb(r.CLAW,which==='open'?1:-1,350); }
-  function arm(which,ms=500){ limb(r.ARM,which==='up'?1:-1,Math.min(1200,ms)); }
+  function claw(which,ms=650){ limb(r.CLAW,which==='open'?1:-1,ms); }
+  function arm(which,ms=600){ limb(r.ARM,which==='up'?1:-1,Math.min(2000,ms)); }
   r.drive=drive; r.claw=claw; r.arm=arm;
   window.addEventListener('robot-gesture',e=>{
     const name=e.detail?.name;

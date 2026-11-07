@@ -55,10 +55,10 @@ async function go(item){
   if(!running)return;
   // 2. взять
   r.face('think');
-  r.claw('open');await wait(450);
+  r.claw('open',800);await wait(900);
   r.arm('down',CFG.armDownMs);await wait(CFG.armDownMs+150);
   r.drive(.6,.6,CFG.nudgeMs);await wait(CFG.nudgeMs+150);
-  r.claw('close');await wait(750);r.claw('close');await wait(750);
+  r.claw('close',1200);await wait(1300);
   r.arm('up',CFG.armUpMs);await wait(CFG.armUpMs+150);
   await sayW('Взял! Везу!','happy');
   // 3. найти человека и подъехать
