@@ -1,7 +1,7 @@
 // Разговор: уши → Claude Haiku (+ глаза, память, контекст) → голос + эмоция + действие.
 // Ключ API вводит взрослый в служебном пульте; хранится только на этом телефоне (localStorage).
 (function(){
-const MODEL='claude-haiku-5-5';
+const MODEL='claude-sonnet-5-5';
 const KEY='robotApiKey',MEM='robotMemory';
 const RULES=`Ты — робот-друг для ребёнка 5 лет. Живёшь дома, ездишь на гусеницах, у тебя клешня (умеет хватать) и рука (вверх-вниз), лицо на экране телефона, камера-глаза.
 Говори по-русски, коротко (1–2 простых предложения), тепло и понятно.
@@ -76,7 +76,7 @@ async function ask(text){caption(text);
   const msgs=hist.map((m,i)=>i===hist.length-1&&img?{role:'user',content:[{type:'text',text:m.content},{type:'image_url',image_url:{url:img}}]}:m);
   const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{
     'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
-   body:JSON.stringify({model:'anthropic/claude-haiku-5.5',max_tokens:300,messages:[{role:'system',content:context()},...msgs]})});
+   body:JSON.stringify({model:localStorage.getItem('robotModel')||'anthropic/claude-sonnet-5.5',max_tokens:300,messages:[{role:'system',content:context()},...msgs]})});
   if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
   const j=await r.json(); raw=j.choices?.[0]?.message?.content||'';
  } else { // напрямую Anthropic
@@ -100,18 +100,24 @@ function relisten(){ if(!window.robotChat.auto) return; if(talking()||busy) retu
 function listen(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return false;
  if(listening) return true;
- rec=new SR(); rec.lang='ru-RU'; rec.interimResults=false; rec.continuous=false;
- rec.onresult=async e=>{const a=e.results[0][0],t=a.transcript.trim(); if(!t||busy||talking()) return;
-  if(a.confidence>0&&a.confidence<.5) return;                              // неразборчиво/шум
-  if(typeof lastBoundary!=='undefined'&&performance.now()-lastBoundary<1500) return; // эхо своего голоса busy=true;
+ // слушаем непрерывно и ждём паузу 2 с: дети говорят с остановками
+ rec=new SR(); rec.lang='ru-RU'; rec.interimResults=true; rec.continuous=true;
+ let finalText='',interim='',quiet=null;
+ const finish=async()=>{const t=(finalText+' '+interim).trim();finalText=interim='';try{rec.abort()}catch(e){}
+  if(!t||busy||talking()||t.length<2) return; busy=true;
   try{await ask(t)}catch(err){console.warn(err);window.say&&say('Ой, я задумался и запутался.','sad')} finally{busy=false}};
- rec.onend=()=>{listening=false; setTimeout(relisten,400)};
+ rec.onresult=e=>{if(busy||talking()) return;interim='';
+  for(let i=e.resultIndex;i<e.results.length;i++){const a=e.results[i][0];
+   if(e.results[i].isFinal){if(!(a.confidence>0&&a.confidence<.45))finalText+=' '+a.transcript}else interim+=a.transcript}
+  const now=(finalText+' '+interim).trim();if(now&&window.robotChat.onHear)window.robotChat.onHear(now);
+  clearTimeout(quiet);quiet=setTimeout(finish,2000)};
+ rec.onend=()=>{listening=false;clearTimeout(quiet);if((finalText+interim).trim())finish();setTimeout(relisten,400)};
  rec.onerror=()=>{listening=false};
  try{rec.start(); listening=true}catch(e){listening=false}
  return true;
 }
 
-window.robotChat={_abort(){try{rec&&rec.abort()}catch(e){}},ask,listen,auto:false,memory,
+window.robotChat={onHear:t=>{try{caption(t)}catch(e){}},_abort(){try{rec&&rec.abort()}catch(e){}},ask,listen,auto:false,memory,
  forget(){try{localStorage.removeItem(MEM)}catch(e){}},
  setKey(k){try{localStorage.setItem(KEY,k.trim())}catch(e){}},
  hasKey(){return !!get(KEY)},
