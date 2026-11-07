@@ -76,18 +76,18 @@ async function ask(text){caption(text);
   const msgs=hist.map((m,i)=>i===hist.length-1&&img?{role:'user',content:[{type:'text',text:m.content},{type:'image_url',image_url:{url:img}}]}:m);
   const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{
     'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
-   body:JSON.stringify({model:localStorage.getItem('robotModel')||'anthropic/claude-sonnet-5.5',max_tokens:300,messages:[{role:'system',content:context()},...msgs]})});
+   body:JSON.stringify({model:localStorage.getItem('robotModel')||'anthropic/claude-sonnet-5.5',max_tokens:800,messages:[{role:'system',content:context()},...msgs]})});
   if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
   const j=await r.json(); raw=j.choices?.[0]?.message?.content||'';
  } else { // напрямую Anthropic
   const msgs=hist.map((m,i)=>i===hist.length-1&&img?{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.split(',')[1]}},{type:'text',text:m.content}]}:m);
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{
     'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-   body:JSON.stringify({model:MODEL,max_tokens:300,system:context(),messages:msgs})});
+   body:JSON.stringify({model:MODEL,max_tokens:800,system:context(),messages:msgs})});
   if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
   const j=await r.json(); raw=(j.content||[]).map(c=>c.text||'').join('');
  }
- let o; try{o=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1))}catch(e){o={say:raw,mood:'happy',action:'none'}}
+ let o; try{o=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1))}catch(e){const m=raw.match(/"say"\s*:\s*"((?:[^"\\]|\\.)*)/);const md=raw.match(/"mood"\s*:\s*"(\w+)/);o={say:m?m[1].replace(/\\"/g,'"'):raw.replace(/[{}"]/g,''),mood:md?md[1]:'happy',action:'none'}}
  hist.push({role:'assistant',content:o.say||raw});logChat(text,o.say||raw);
  remember(o.remember);
  window.dispatchEvent(new CustomEvent('robot-action',{detail:o.action||'none'}));
