@@ -92,6 +92,10 @@ if(window.robot)try{window.robot.say=elevenSay}catch(e){}
 window.robotVoice={
  setKey(k){try{localStorage.setItem(KEY,k.trim());localStorage.removeItem(VOICE)}catch(e){}},
  setVoice(v){try{localStorage.setItem(VOICE,v.trim())}catch(e){}},
- hasKey(){return !!(get(KEY)||get('robotApiKey'))}
+ hasKey(){return !!(get(KEY)||get('robotApiKey'))},
+ // голоса OpenRouter gpt-audio-mini: по кругу, с образцом
+ list:['coral','shimmer','nova','sage','fable','alloy','ballad','verse','echo','ash'],
+ name(){return get(VOICE)||'coral'},
+ next(){const l=this.list,i=l.indexOf(this.name());const v=l[(i+1)%l.length];this.setVoice(v);elevenSay('Привет! Так я говорю теперь. Нравится?','happy');return v}
 };
 })();
