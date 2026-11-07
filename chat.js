@@ -31,11 +31,11 @@ function context(){
 // кадр с камеры (если она включена) — маленький JPEG для «глаз» модели
 function snapshot(){
  const v=[...document.querySelectorAll('video')].find(v=>v.videoWidth>0&&!v.paused);if(!v)return null;
- const c=document.createElement('canvas');c.width=320;c.height=Math.round(320*v.videoHeight/v.videoWidth);
+ const c=document.createElement('canvas');c.width=640;c.height=Math.round(640*v.videoHeight/v.videoWidth);
  const g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(v,0,0,c.width,c.height); // зеркально, как видит ребёнок
- return c.toDataURL('image/jpeg',.7);
+ return c.toDataURL('image/jpeg',.82);
 }
-const LOOK=/(смотри|посмотри|что это|что у меня|какого цвета|какой цвет|сколько|угадай что|кто это|что я держу)/i;
+const LOOK=/(смотри|посмотри|видишь|вижу|покажу|показываю|глянь|это|у меня|какого цвета|какой цвет|сколько|угадай|кто это|держу|фото|картин|рисун)/i;
 
 // журнал разговора (для разбора) + подпись «что услышал» на экране
 function logChat(h,a){try{const l=JSON.parse(localStorage.getItem('robotChatLog')||'[]');l.push([new Date().toLocaleTimeString('ru-RU'),h,a]);localStorage.setItem('robotChatLog',JSON.stringify(l.slice(-80)))}catch(e){}}
