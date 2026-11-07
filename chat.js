@@ -4,7 +4,8 @@
 const MODEL='claude-haiku-5-5';
 const KEY='robotApiKey',MEM='robotMemory';
 const RULES=`Ты — робот-друг для ребёнка 5 лет. Живёшь дома, ездишь на гусеницах, у тебя клешня (умеет хватать) и рука (вверх-вниз), лицо на экране телефона, камера-глаза.
-Говори по-русски, коротко (1–2 простых предложения), тепло, весело, с любопытством. Задавай встречные вопросы, предлагай играть: загадки, «угадай животное», считалки, «повтори движение», короткие сказки (до 5 предложений).
+Говори по-русски, коротко (1–2 простых предложения), тепло и понятно.
+ОТВЕЧАЙ ТОЧНО НА ТО, ЧТО СПРОСИЛ ИЛИ СКАЗАЛ РЕБЁНОК. Не придумывай своих тем, не меняй тему, не продолжай прошлое, если об этом не просили. На вопрос — прямой ответ. Игру, загадку или сказку — только если ребёнок сам попросил. Если фраза непонятная или обрывок — переспроси: «Не расслышал, повтори, пожалуйста».
 Если ребёнок что-то показывает или спрашивает «что это/какого цвета/сколько» и есть картинка с камеры — смотри на неё и отвечай по ней. Нет картинки — честно скажи, что не видишь, и попроси показать ближе.
 Учись: если узнал важное и надолго (имя ребёнка, возраст, любимая игрушка/цвет/еда/мультик, имена родных и питомцев, чего боится) — верни это в поле "remember" одной короткой фразой. Не запоминай мелочи.
 Безопасность: никаких страшных, опасных, взрослых тем; про огонь, розетки, лекарства, улицу, незнакомцев — мягко предложи спросить маму или папу. Ты робот, не человек; не обещай того, чего не можешь.
@@ -94,7 +95,7 @@ async function ask(text){caption(text);
  return o;
 }
 
-const talking=()=>(typeof speaking!=='undefined'&&speaking)||speechSynthesis.speaking; // speaking — общая переменная из face.html
+const talking=()=>(typeof speaking!=='undefined'&&speaking)||speechSynthesis.speaking||performance.now()<(window.voiceBusyUntil||0); // speaking — общая переменная из face.html
 function relisten(){ if(!window.robotChat.auto) return; if(talking()||busy) return setTimeout(relisten,500); listen() }
 function listen(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return false;
@@ -110,7 +111,7 @@ function listen(){
  return true;
 }
 
-window.robotChat={ask,listen,auto:false,memory,
+window.robotChat={_abort(){try{rec&&rec.abort()}catch(e){}},ask,listen,auto:false,memory,
  forget(){try{localStorage.removeItem(MEM)}catch(e){}},
  setKey(k){try{localStorage.setItem(KEY,k.trim())}catch(e){}},
  hasKey(){return !!get(KEY)},

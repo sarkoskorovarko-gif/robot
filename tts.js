@@ -26,8 +26,9 @@ function usage(){try{const u=JSON.parse(localStorage.getItem('robotVoiceUse')||'
 function addUsed(sec){const u=usage();u.s+=sec;try{localStorage.setItem('robotVoiceUse',JSON.stringify(u))}catch(e){}}
 function overLimit(){return usage().s>=LIMIT_SEC}
 async function elevenSay(text,mood='normal'){
+ window.voiceBusyUntil=Infinity;try{window.robotChat&&robotChat._abort()}catch(e){} // не слушать себя
  const key=get(KEY)||get('robotApiKey'); // нет отдельного ключа голоса → тот же ключ OpenRouter
- if(!key)return builtinSay(text,mood);
+ if(!key){window.voiceBusyUntil=performance.now()+600;return builtinSay(text,mood)}
  face(mood,Math.max(1400,text.length*90));
  try{
   let url,fresh=false;
@@ -35,7 +36,7 @@ async function elevenSay(text,mood='normal'){
   let cache=null;try{cache=await caches.open('robot-voice')}catch(e){}
   const hit=cache&&await cache.match(ck);
   if(hit){url=URL.createObjectURL(await hit.blob())}            // уже говорил эту фразу — бесплатно
-  else if(overLimit()){return builtinSay(text,mood)}            // дневной лимит облачного голоса исчерпан
+  else if(overLimit()){window.voiceBusyUntil=performance.now()+600;return builtinSay(text,mood)}            // дневной лимит облачного голоса исчерпан
   else{fresh=true;
   if(key.startsWith('sk-or-')){ // OpenRouter: озвучка моделью gpt-audio-mini
    const voice=/^[a-z]+$/.test(get(VOICE))?get(VOICE):'coral'; // только имена голосов OpenAI
@@ -83,9 +84,9 @@ async function elevenSay(text,mood='normal'){
   if(ctx.state==='suspended')await ctx.resume();
   ctx.createMediaElementSource(cur).connect(analyser);
   speechSynthesis.cancel();speaking=true;
-  cur.onended=()=>{speaking=false;talk=0};
+  cur.onended=()=>{speaking=false;talk=0;window.voiceBusyUntil=performance.now()+900};
   await cur.play();mouthLoop();
- }catch(e){console.warn('ElevenLabs:',e);builtinSay(text,mood)}
+ }catch(e){console.warn('ElevenLabs:',e);window.voiceBusyUntil=performance.now()+600;builtinSay(text,mood)}
 }
 window.say=elevenSay;
 if(window.robot)try{window.robot.say=elevenSay}catch(e){}
