@@ -36,7 +36,10 @@ function snapshot(){
 }
 const LOOK=/(смотри|посмотри|что это|что у меня|какого цвета|какой цвет|сколько|угадай что|кто это|что я держу)/i;
 
-async function ask(text){
+// журнал разговора (для разбора) + подпись «что услышал» на экране
+function logChat(h,a){try{const l=JSON.parse(localStorage.getItem('robotChatLog')||'[]');l.push([new Date().toLocaleTimeString('ru-RU'),h,a]);localStorage.setItem('robotChatLog',JSON.stringify(l.slice(-80)))}catch(e){}}
+let cap=null;function caption(t){if(!cap){cap=document.createElement('div');cap.style.cssText='position:fixed;left:0;right:0;top:4px;text-align:center;z-index:6;color:#9fe6ff;font:15px sans-serif;opacity:.8;pointer-events:none';document.body.appendChild(cap)}cap.textContent='Слышу: «'+t+'»';clearTimeout(cap._t);cap._t=setTimeout(()=>cap.textContent='',4000)}
+async function ask(text){caption(text);
  if(window.robotVoice&&/(смени|поменяй|другой)\s+голос/i.test(text)){robotVoice.next();return}
  if(window.robotFetch){ // «принеси мячик», «отвези маме мишку»
   if(/запомни расстояние/i.test(text)){const m=text.match(/расстояние\s+(?:до\s+)?([а-яё]+)/i);robotFetch.calibrate(m?m[1]:'мячик');return}
@@ -84,7 +87,7 @@ async function ask(text){
   const j=await r.json(); raw=(j.content||[]).map(c=>c.text||'').join('');
  }
  let o; try{o=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1))}catch(e){o={say:raw,mood:'happy',action:'none'}}
- hist.push({role:'assistant',content:o.say||raw});
+ hist.push({role:'assistant',content:o.say||raw});logChat(text,o.say||raw);
  remember(o.remember);
  window.dispatchEvent(new CustomEvent('robot-action',{detail:o.action||'none'}));
  if(window.say) say(o.say||'Хм!',o.mood||'happy'); else window.face&&face(o.mood||'happy',2000);
