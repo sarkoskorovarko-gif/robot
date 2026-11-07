@@ -117,7 +117,7 @@ function drawEye(cx,cy,u,s,t){
  const c=Math.min(1,Math.max(P.lid,blink)),base=-ry+2*ry*c,inner=-s;
  const yIn=base+P.tilt*ry*.45*(1-c*.6),yOut=base-P.tilt*ry*.2*(1-c*.6)+(P.tilt<0?-P.tilt*ry*.35:0);
  const yL=inner<0?yIn:yOut,yR=inner<0?yOut:yIn;
- x.fillStyle='#000';x.beginPath();x.moveTo(-rx-4,-ry-4);x.lineTo(rx+4,-ry-4);x.lineTo(rx+4,yR);x.quadraticCurveTo(0,(yL+yR)/2+ry*.22*(1-c),-rx-4,yL);x.closePath();x.fill();
+ x.fillStyle=VIS;x.beginPath();x.moveTo(-rx-4,-ry-4);x.lineTo(rx+4,-ry-4);x.lineTo(rx+4,yR);x.quadraticCurveTo(0,(yL+yR)/2+ry*.22*(1-c),-rx-4,yL);x.closePath();x.fill();
  // нижнее веко: «улыбающиеся» глаза
  if(P.bot>.01){const yb=ry-P.bot*ry*1.25;x.beginPath();x.moveTo(-rx-4,ry+4);x.lineTo(rx+4,ry+4);x.lineTo(rx+4,yb+ry*.25);x.quadraticCurveTo(0,yb-P.bot*ry*.55,-rx-4,yb+ry*.25);x.closePath();x.fill()}
  x.restore();x.globalAlpha=1;x.restore()}
@@ -134,6 +134,29 @@ function drawMouth(cx,cy,u,t){
  x.save();x.translate(cx,cy);x.beginPath();x.moveTo(lx,ly);x.quadraticCurveTo(0,up*2-(ly+ry)/2,rx,ry);x.quadraticCurveTo(0,lo*2-(ly+ry)/2,lx,ly);x.closePath();
  if(o>.04){x.fillStyle='#2a0c1e';x.fill();if(o>.28){x.save();x.clip();x.fillStyle='#ff6f94';x.beginPath();x.ellipse(0,lo*.92,w*.42,u*.16,0,0,7);x.fill();x.restore()}}
  x.strokeStyle='#ff8fb0';x.lineWidth=u*.085;x.lineJoin='round';x.lineCap='round';x.stroke();x.restore()}
+const VIS='#0a1222';let antA=0,antV=0,prevGX=0;
+function drawHead(t,hw,hh,hcy,vw,vh,vcy){
+ const cx=W/2,top=hcy-hh/2,s=hh/300;
+ // антенна: пружина от движений головы
+ antV+=(-antA*90-antV*4+(gx-prevGX)*900+bounceV*3)*.016;antA+=antV*.016;prevGX=gx;antA=Math.max(-.6,Math.min(.6,antA));
+ x.save();x.translate(cx,top+4*s);x.rotate(antA);x.strokeStyle='#9aabc0';x.lineWidth=7*s;x.lineCap='round';x.beginPath();x.moveTo(0,0);x.lineTo(0,-34*s);x.stroke();
+ const glow=speaking?.6+talk*.4:.45+Math.sin(t/600)*.15;x.fillStyle=`rgba(255,${mood==='angry'?90:120},${mood==='angry'?90:150},${glow})`;x.beginPath();x.arc(0,-42*s,15*s,0,7);x.fill();
+ x.fillStyle='#ff7aa8';x.beginPath();x.arc(0,-42*s,10*s,0,7);x.fill();x.fillStyle='rgba(255,255,255,.8)';x.beginPath();x.arc(-3.5*s,-45.5*s,3.2*s,0,7);x.fill();x.restore();
+ // уши-динамики со светящимся кольцом
+ for(const q of[-1,1]){const ex=cx+q*(hw/2+6*s),r=Math.min(hh*.2,(W-hw)/2-4);if(r<6)continue;
+  const eg=x.createLinearGradient(0,hcy-r,0,hcy+r);eg.addColorStop(0,'#e7eef6');eg.addColorStop(1,'#9fb1c6');x.fillStyle=eg;x.beginPath();x.arc(ex,hcy,r,0,7);x.fill();
+  const ring=speaking?.5+talk*.5:.25+Math.sin(t/900+q)*.12;x.strokeStyle=`rgba(79,209,255,${ring})`;x.lineWidth=r*.22;x.beginPath();x.arc(ex,hcy,r*.6,0,7);x.stroke();
+  x.fillStyle='#55657a';x.beginPath();x.arc(ex,hcy,r*.28,0,7);x.fill()}
+ // корпус
+ const hg=x.createLinearGradient(0,top,0,top+hh);hg.addColorStop(0,'#fbfdff');hg.addColorStop(.55,'#dbe5f0');hg.addColorStop(1,'#a9bacd');
+ x.fillStyle=hg;x.beginPath();x.roundRect(cx-hw/2,top,hw,hh,hh*.3);x.fill();
+ x.strokeStyle='#8193a9';x.lineWidth=3*s;x.stroke();
+ x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.ellipse(cx-hw*.28,top+hh*.07,hw*.16,hh*.03,-.05,0,7);x.fill();
+ // винтики
+ x.fillStyle='#9aabbf';for(const [bx,by] of [[-1,-1],[1,-1],[-1,1],[1,1]]){x.beginPath();x.arc(cx+bx*(hw/2-hh*.12),hcy+by*(hh/2-hh*.1),5*s,0,7);x.fill()}
+ // стекло-экран
+ x.fillStyle='#3a4a60';x.beginPath();x.roundRect(cx-vw/2-5*s,vcy-vh/2-5*s,vw+10*s,vh+10*s,vh*.34);x.fill();
+ x.fillStyle=VIS;x.beginPath();x.roundRect(cx-vw/2,vcy-vh/2,vw,vh,vh*.32);x.fill()}
 function frame(t){
  const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;
  if(t-lastTouch>120000&&targetMood!=='sleep'){targetMood='sleep';moodChanged=t}
@@ -146,16 +169,20 @@ function frame(t){
  const tgx=mood==='think'?.55:hasFace?cameraTX:tx+sx,tgy=mood==='think'?-.6:hasFace?cameraTY:ty+sy,k=1-Math.exp(-dt/(hasFace?150:220));
  gx+=(tgx-gx)*k;gy+=(tgy-gy)*k;springAll(dt);
  if(speaking){const el=t-lastBoundary,p=lastBoundary?Math.max(0,1-el/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(p,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);
- const u=Math.min(W/8.2,H/4.4),br=1+Math.sin(t/(mood==='sleep'?1900:1250))*.016,ey=H*.43;
+ // голова робота: корпус, стекло-экран, уши-динамики, антенна
+ const hw=Math.min(W*.8,H*1.9),hh=Math.min(H*.84,hw*.52),hcy=H*.57,vw=hw*.8,vh=hh*.76,vcy=hcy+hh*.03;
+ const u=Math.min(vw/6.5,vh/3.9),br=1+Math.sin(t/(mood==='sleep'?1900:1250))*.016,ey=vcy-u*.25;
  const sb=blink;blink=bk;
  x.fillStyle='#000';x.fillRect(0,0,W,H);x.save();
  x.translate(W/2+gx*u*.06,H/2+gy*u*.04+Math.sin(t/950)*u*.015);x.rotate(Math.sin(t/1700)*.01+gx*.015);x.scale(br*(1-bounce*.07),br*(1+bounce*.06));x.translate(-W/2,-H/2);
+ drawHead(t,hw,hh,hcy,vw,vh,vcy);
  const bl=Math.min(1,P.bl+(fi.size>.3?.3:0));if(bl>.02){x.globalAlpha=bl*.8;x.fillStyle='#ff5f93';for(const q of[-1,1]){x.beginPath();x.ellipse(W/2+q*u*2.15,ey+u*.95,u*.36,u*.17,0,0,7);x.fill()}x.globalAlpha=1}
  drawEye(W/2-u*1.55,ey,u,-1,t);drawEye(W/2+u*1.55,ey,u,1,t);drawBrow(W/2-u*1.55,ey,u,-1);drawBrow(W/2+u*1.55,ey,u,1);
- drawMouth(W/2,H*.72,u*1.3,t);
+ drawMouth(W/2,vcy+u*1.2,u*1.15,t);
+ x.save();x.beginPath();x.roundRect(W/2-vw/2,vcy-vh/2,vw,vh,vh*.32);x.clip();const gl=x.createLinearGradient(W/2-vw/2,vcy-vh/2,W/2-vw*.1,vcy+vh/2);gl.addColorStop(0,'rgba(255,255,255,.13)');gl.addColorStop(.35,'rgba(255,255,255,.03)');gl.addColorStop(.36,'rgba(255,255,255,0)');x.fillStyle=gl;x.fillRect(W/2-vw/2,vcy-vh/2,vw,vh);x.restore();
  x.fillStyle='#bfefff';
- if(mood==='sleep'){x.font=`bold ${u*.45}px sans-serif`;for(let i=0;i<3;i++){const ph=((t/1600)+i/3)%1;x.globalAlpha=Math.sin(ph*Math.PI);x.fillText('z',W/2+u*2.3+ph*u*.8,H*.3-ph*u*1.2)}x.globalAlpha=1}
- if(mood==='think'){for(let i=0;i<3;i++){x.globalAlpha=(Math.floor(t/350)%4)>i?1:.2;x.beginPath();x.arc(W/2+u*2.45+i*u*.32,H*.15,u*.08,0,7);x.fill()}x.globalAlpha=1}
+ if(mood==='sleep'){x.font=`bold ${u*.45}px sans-serif`;for(let i=0;i<3;i++){const ph=((t/1600)+i/3)%1;x.globalAlpha=Math.sin(ph*Math.PI);x.fillText('z',W/2+u*2.2+ph*u*.7,vcy-u*.9-ph*u*.9)}x.globalAlpha=1}
+ if(mood==='think'){for(let i=0;i<3;i++){x.globalAlpha=(Math.floor(t/350)%4)>i?1:.2;x.beginPath();x.arc(W/2+u*2.2+i*u*.32,vcy-u*1.45,u*.08,0,7);x.fill()}x.globalAlpha=1}
  x.restore();blink=sb;requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script>
