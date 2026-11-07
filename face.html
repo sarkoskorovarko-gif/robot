@@ -256,7 +256,7 @@ function frame(t){
  if(mood==='think'){for(let i=0;i<3;i++){x.globalAlpha=(Math.floor(t/350)%4)>i?1:.2;x.beginPath();x.arc(W/2+u*2.2+i*u*.32,vcy-u*1.45,u*.08,0,7);x.fill()}x.globalAlpha=1}
  x.restore();x.restore();blink=sb;requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
-window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script>
+window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script src="map.js"></script><script>
 (function(){const kb=document.getElementById("keyBtn"),lb=document.getElementById("listenBtn");
 function upd(){kb.textContent=robotChat.hasKey()?"Ключ Haiku: есть":"Ключ Haiku: нет";lb.textContent="Слушать: "+(robotChat.auto?"вкл":"выкл")}
 kb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ API Anthropic (вставьте сами, хранится только на этом телефоне):","");if(k)robotChat.setKey(k);upd()};

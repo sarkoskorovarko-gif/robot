@@ -14,7 +14,10 @@ const saveCfg=()=>{try{localStorage.setItem('robotFetchCfg',JSON.stringify(CFG))
 async function calibrate(item='мячик'){
  const o=await vision.find(norm(item));
  if(!o){window.say&&say('Не вижу предмет, поставь его передо мной.','sad');return null}
- CFG.grabSize=+(o.w*.95).toFixed(2);CFG.grabBottom=+Math.min(.98,o.y+o.h-.03).toFixed(2);saveCfg();
+ // низ предмета в кадре зависит только от расстояния по полу → общий для всех предметов;
+ // размер — свой у каждого предмета
+ const it=norm(item);CFG.items=CFG.items||{};CFG.items[it]=+(o.w*.95).toFixed(2);
+ CFG.grabBottom=+Math.min(.98,o.y+o.h-.03).toFixed(2);saveCfg();
  window.say&&say('Запомнил! Отсюда буду хватать.','happy');return {...CFG}}
 const r=window.robot,wait=ms=>new Promise(x=>setTimeout(x,ms));
 let running=false;
@@ -45,7 +48,8 @@ async function go(item){
    if(!o){if(++lost>3){o=await findItem(item,6);if(!o){await sayW('Ой, потерял!','sad');return}lost=0}continue}
    lost=0;
    if(Math.abs(o.x)>CFG.centerTol){turnTo(o.x);await wait(400);continue}
-   if(o.w>=CFG.grabSize||o.y+o.h>=CFG.grabBottom)break;
+   const sz=CFG.items&&CFG.items[item];
+   if((sz&&o.w>=sz)||o.y+o.h>=CFG.grabBottom)break;
    r.drive(1,1,o.w>.2?200:380);await wait(o.w>.2?350:550);
   }
   if(!running)return;
