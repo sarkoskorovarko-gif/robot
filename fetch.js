@@ -75,7 +75,22 @@ async function go(item){
   r.drive(-1,-1,400);await wait(550);r.claw('close');await wait(400);r.arm('up',500);
  }finally{r.stop();running=false;window.robotTask=null}
 }
-window.robotFetch={go,calibrate,stop(){running=false;r&&r.stop()},CFG,norm,save:saveCfg,reset(){localStorage.removeItem('robotFetchCfg')}};
+// «Найди мяч»: покрутиться, найти глазами, повернуться к нему (без захвата)
+async function look(item){
+ if(running)return;item=norm(item);
+ if(!window.vision||!vision.enabled){window.say&&say('Включи мне камеру, и я поищу!','sad');return}
+ running=true;window.robotTask='look';
+ try{
+  await sayW(`Ищу ${item}!`,'think');
+  const canMove=r&&r.ch&&localStorage.getItem('robot.autonomy.enabled')==='1';
+  let o=canMove?await findItem(item,12):await vision.find(item);
+  if(!o){await sayW(`Не вижу ${item}. Может, он спрятался?`,'sad');return}
+  if(canMove)for(let i=0;i<6&&running&&Math.abs(o.x)>CFG.centerTol;i++){turnTo(o.x);await wait(450);o=await vision.find(item)||o}
+  r.face('surprise',700);
+  await sayW(`Нашёл ${item}! ${o.x<-.25?'Вон там, слева!':o.x>.25?'Вон там, справа!':'Вот он, прямо передо мной!'}`,'happy');
+ }finally{r&&r.stop();running=false;window.robotTask=null}
+}
+window.robotFetch={go,look,calibrate,stop(){running=false;r&&r.stop()},CFG,norm,save:saveCfg,reset(){localStorage.removeItem('robotFetchCfg')}};
 // ладонь = стоп и для этого задания
 window.addEventListener('robot-gesture',e=>{if(e.detail?.name==='Open_Palm'&&running){running=false;r.stop()}});
 })();
