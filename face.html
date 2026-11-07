@@ -76,19 +76,89 @@ function wake(){lastTouch=performance.now();if(targetMood==='sleep')face('happy'
 function touchReact(){enterScreen();wake();const a=['happy','surprise','love'];face(a[Math.floor(Math.random()*a.length)],850);anim=1}
 let holdTimer=null,longHold=false;c.addEventListener('pointerdown',e=>{e.preventDefault();holdTimer=setTimeout(()=>{longHold=true;ui.classList.add('on');face('surprise',700)},700)});c.addEventListener('pointerup',()=>{clearTimeout(holdTimer);if(!longHold)touchReact();longHold=false});c.addEventListener('pointercancel',()=>clearTimeout(holdTimer));
 setInterval(()=>{if(performance.now()-lastTouch<120000&&targetMood!=='sleep'){const q=Math.random();if(q<.5){}else if(q<.65)face('surprise',650);else if(q<.8)face('happy',550);else face('sly',700)}},5000);
-const eyePose={top:0,bottom:0,tilt:0,pupil:1,heart:0};const BLUE='#4fd1ff',INSIDE='#102b52',PINK='#ff6f9f';
-const poses={normal:{b:[0,0],m:[0,0,0,0,0,0,0,1]},happy:{b:[-.04,-.04],m:[1,0,0,0,0,0,0,0]},love:{b:[-.08,-.08],m:[1,0,0,0,0,0,0,0]},surprise:{b:[-.36,-.36],m:[0,1,0,0,0,0,0,0]},angry:{b:[.24,.24],m:[0,0,1,0,0,0,0,0]},sad:{b:[-.19,-.19],m:[0,0,0,1,0,0,0,0]},sly:{b:[-.24,.04],m:[0,0,0,0,1,0,0,0]},think:{b:[-.21,.03],m:[0,0,0,0,0,1,0,0]},sleep:{b:[.04,.04],m:[0,0,0,0,0,0,1,0]}};
-let browPose=[0,0],mouthPose=[0,0,0,0,0,0,0,1],sx=0,sy=0,nextSac=0,blinkDouble=false,squash=0;
-const eyeTargets={normal:[0,0,0,1,0],happy:[0,0,0,1,0],love:[0,0,0,.85,1],surprise:[0,0,0,1,0],angry:[.08,.02,.18,.78,0],sad:[.05,.08,-.08,.85,0],sly:[.03,.02,.17,.9,0],think:[.04,.02,.1,.9,0],sleep:[.49,.49,0,.65,0]};
-function eye(cx,cy,r,side,t){const w=r*.78,h=r*.93,op=mood==='sleep'?.035:Math.max(.055,1-Math.min(.96,Math.max(eyePose.top,blink)*.95+Math.max(eyePose.bottom,blink)*.55));x.save();x.translate(cx+gx*r*.19,cy+gy*r*.15);x.rotate(eyePose.tilt*side);x.scale(1,op);
-if(mood==='happy'){x.strokeStyle='#f5fbff';x.lineWidth=r*.15;x.lineCap='round';x.beginPath();x.moveTo(-w*.8,r*.12);x.quadraticCurveTo(0,-r*.48,w*.8,r*.12);x.stroke();x.restore();return}
-if(mood==='love'){x.scale(1+Math.sin(t/230)*.06,1+Math.sin(t/230)*.06);x.fillStyle='#ff547f';x.beginPath();x.moveTo(0,r*.48);x.bezierCurveTo(-w*1.1,-r*.1,-w*.75,-r*.78,0,-r*.32);x.bezierCurveTo(w*.75,-r*.78,w*1.1,-r*.1,0,r*.48);x.fill();x.fillStyle='white';x.beginPath();x.arc(-r*.19,-r*.15,r*.08,0,7);x.fill();x.restore();return}
-x.fillStyle='#eefaff';x.beginPath();x.ellipse(0,0,w,h,0,0,7);x.fill();x.save();x.beginPath();x.ellipse(0,0,w,h,0,0,7);x.clip();let ir=r*.43,px=gx*r*.32,py=gy*r*.28;if(mood==='think'){px+=side*r*.2;py-=r*.18}if(mood==='surprise')ir*=.66;const g=x.createRadialGradient(px-ir*.25,py-ir*.35,ir*.08,px,py,ir*1.25);g.addColorStop(0,'#73f4ff');g.addColorStop(.4,mood==='angry'?'#e46c67':'#16a9d5');g.addColorStop(1,mood==='angry'?'#703447':'#07507f');x.fillStyle=g;x.beginPath();x.arc(px,py,ir,0,7);x.fill();x.fillStyle='#071626';x.beginPath();x.arc(px,py,ir*.54,0,7);x.fill();x.fillStyle='white';x.beginPath();x.ellipse(-w*.31,-h*.38,r*.17,r*.21,-.35,0,7);x.fill();x.beginPath();x.arc(w*.39,h*.18,r*.075,0,7);x.fill();x.restore();x.fillStyle='rgba(23,47,70,.18)';x.beginPath();x.ellipse(0,-h*.82,w*1.02,h*.34,0,Math.PI,Math.PI*2);x.fill();x.restore()}
-function brow(cx,cy,r,p,side){const o=side<0?cx-r*2.12:cx+r*2.12,i=side<0?cx-r*1.08:cx+r*1.08,base=cy-r*1.12,y1=base-p*r*.8,y2=base+p*r*.8;x.strokeStyle=mood==='angry'?'#ff766c':'#9be8ff';x.lineWidth=r*.2;x.lineCap='round';x.beginPath();if(side<0){x.moveTo(o,y1);x.quadraticCurveTo(cx-r*1.65,base-r*.32,i,y2)}else{x.moveTo(i,y2);x.quadraticCurveTo(cx+r*1.65,base-r*.32,o,y1)}x.stroke()}
-function mouth(cx,cy,r){let open=0,kind=0;if(speaking&&talk>.01){open=talk;kind=Math.floor(performance.now()/190)%3}else{const md=typeof mood==="string"?mood:"normal";if(md==="surprise")open=.32;else if(md==="happy"||md==="love"){x.save();x.translate(cx,cy);x.fillStyle="#210e23";x.beginPath();x.moveTo(-r*.42,-r*.04);x.quadraticCurveTo(0,r*.62,r*.42,-r*.04);x.closePath();x.fill();x.fillStyle="#ff668d";x.beginPath();x.ellipse(0,r*.2,r*.16,r*.07,0,0,7);x.fill();x.strokeStyle="#ff8da9";x.lineWidth=r*.07;x.lineJoin="round";x.stroke();x.restore();return}else{x.save();x.translate(cx,cy);x.strokeStyle="#ff8da9";x.lineCap="round";x.lineWidth=r*.09;x.beginPath();const c=md==="sad"?-r*.16:md==="angry"?-r*.06:md==="sleep"||md==="think"?r*.02:md==="sly"?r*.1:r*.16;x.moveTo(-r*(md==="sleep"?.18:.34),0);x.quadraticCurveTo(md==="sly"?r*.15:0,c,r*(md==="sleep"?.18:.34),md==="sly"?-r*.08:0);x.stroke();x.restore();return}}x.save();x.translate(cx,cy);x.scale(kind===2?1.4:1,1);x.fillStyle='#ff8da9';x.beginPath();x.ellipse(0,0,r*.49,Math.max(r*.035,r*(.12+open*.3)),0,0,7);x.fill();if(open>.045){x.fillStyle='#210e23';x.beginPath();x.ellipse(0,0,r*(kind===0?.31:.24),r*(.035+open*.28),0,0,7);x.fill();if(open>.4){x.fillStyle='#ff668d';x.beginPath();x.ellipse(0,r*open*.34,r*.17,r*.07,0,0,7);x.fill()}}else{x.strokeStyle='#ff8da9';x.lineWidth=r*.09;x.beginPath();x.moveTo(-r*.42,0);x.quadraticCurveTo(0,r*.12,r*.42,0);x.stroke()}x.restore()}
-function interpolateFace(dt){const p=poses[targetMood]||poses.normal,k=1-Math.exp(-dt/135),q=eyeTargets[targetMood]||eyeTargets.normal;for(let i=0;i<2;i++)browPose[i]+=(p.b[i]-browPose[i])*k;for(let i=0;i<mouthPose.length;i++)mouthPose[i]+=(p.m[i]-mouthPose[i])*k;eyePose.top+=(q[0]-eyePose.top)*k;eyePose.bottom+=(q[1]-eyePose.bottom)*k;eyePose.tilt+=(q[2]-eyePose.tilt)*k;eyePose.pupil+=(q[3]-eyePose.pupil)*k;eyePose.heart+=(q[4]-eyePose.heart)*k}
-function frame(t){const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;if(t-lastTouch>120000&&targetMood!=='sleep'){targetMood='sleep';moodChanged=t}if(targetMood!==mood){squash=1;mood=targetMood}if(squash>0)squash=Math.max(0,squash-dt/300);if(blink>0){blink=Math.max(0,blink-dt/105);if(!blink&&blinkDouble){blinkDouble=false;nextBlink=t+100}}else if(t>nextBlink){blink=1;blinkDouble=Math.random()<.2;nextBlink=t+(blinkDouble?190:3000+Math.random()*3000)}
-const fi=window.faceInfo||{},hasFace=!!(cameraStream&&fi.seen);if(!hasFace&&t>nextSac){sx=(Math.random()-.5)*.55;sy=(Math.random()-.5)*.28;nextSac=t+1500+Math.random()*2500}interpolateFace(dt);const k=1-Math.exp(-dt/(hasFace?170:260)),tgx=hasFace?cameraTX:tx+sx,tgy=hasFace?cameraTY:ty+sy;gx+=(tgx-gx)*k;gy+=(tgy-gy)*k;if(speaking){const el=t-lastBoundary,p=lastBoundary?Math.max(0,1-el/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(p,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);anim=Math.max(0,anim-dt/800);const r=Math.min(W/6.4,H/4.1),b=1+Math.sin(t/1250)*.015,ch=Math.min(1,(mood==='love'?.82:mood==='happy'?.58:.22)+(fi.size>.3?.32:0));x.fillStyle='#000';x.fillRect(0,0,W,H);x.save();x.translate(W/2+gx*r*.045,Math.sin(t/950)*r*.012+gy*r*.025);x.rotate(Math.sin(t/1700)*.008);x.scale(b*(1-squash*.06),b*(1+squash*.045));x.translate(-W/2,0);for(const q of [-1,1]){x.globalAlpha=ch;x.fillStyle='rgba(255,102,151,.7)';x.beginPath();x.ellipse(W/2+q*r*2.18,H*.57,r*.31,r*.16,0,0,7);x.fill()}x.globalAlpha=1;eye(W/2-r*1.6,H*.42,r,-1,t);eye(W/2+r*1.6,H*.42,r,1,t);brow(W/2,H*.42,r,browPose[0],-1);brow(W/2,H*.42,r,browPose[1],1);mouth(W/2,H*.8,r*1.45);if(mood==='think'){x.fillStyle='white';x.font=`${r*.55}px sans-serif`;x.fillText('…',W/2+r*2.2,H*.22)}if(mood==='sleep'){x.fillStyle='white';x.font=`${r*.5}px sans-serif`;x.fillText('Z',W/2+r*2,H*.22+Math.sin(t/400)*10);x.fillText('z',W/2+r*2.35,H*.1+Math.sin(t/520)*8)}x.restore();requestAnimationFrame(frame)}requestAnimationFrame(frame);window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script>
+/* ---------- Лицо (рисует Claude): пружинные параметры, веки-шторки, гибкий рот ---------- */
+// параметры: lid верх. веко 0..1, tilt наклон век (+ злой, - грустный), bot нижн. веко (улыбка глаз),
+// pup зрачок, iris радужка, bu брови вверх, bt наклон бровей, ba асимметрия бровей,
+// mw ширина рта, mc улыбка(+)/грусть(-), mo открыт, ms перекос, bl румянец, ht сердечки, gx/gy взгляд
+const MOODS={
+ normal:  {lid:.10,tilt:0,  bot:0,  pup:1,   iris:1,  bu:0,   bt:0,   ba:0,  mw:.50,mc:.55,mo:0,  ms:0, bl:.25,ht:0},
+ happy:   {lid:0,  tilt:0,  bot:.55,pup:1.05,iris:1,  bu:.30, bt:-.1, ba:0,  mw:.70,mc:1,  mo:.50,ms:0, bl:.75,ht:0},
+ love:    {lid:.04,tilt:0,  bot:.25,pup:1,   iris:1,  bu:.35, bt:-.25,ba:0,  mw:.55,mc:.9, mo:.22,ms:0, bl:1,  ht:1},
+ surprise:{lid:0,  tilt:0,  bot:0,  pup:.62, iris:.86,bu:.75, bt:-.1, ba:0,  mw:.3,mc:0,  mo:.80,ms:0, bl:.2, ht:0},
+ sad:     {lid:.30,tilt:-.7,bot:0,  pup:1.12,iris:1,  bu:.20, bt:-.9, ba:0,  mw:.42,mc:-.75,mo:.04,ms:0,bl:.1, ht:0},
+ angry:   {lid:.32,tilt:.85,bot:.12,pup:.85, iris:1,  bu:-.25,bt:1,   ba:0,  mw:.42,mc:-.4,mo:.12,ms:0, bl:0,  ht:0},
+ sly:     {lid:.45,tilt:.25,bot:.18,pup:1,   iris:1,  bu:0,   bt:.3,  ba:.7, mw:.48,mc:.6, mo:0,  ms:.6,bl:.35,ht:0},
+ think:   {lid:.25,tilt:0,  bot:.08,pup:1,   iris:1,  bu:.25, bt:0,   ba:.55,mw:.28,mc:-.1,mo:.02,ms:.4,bl:.1, ht:0},
+ sleep:   {lid:.97,tilt:-.1,bot:0,  pup:1,   iris:1,  bu:-.1, bt:0,   ba:0,  mw:.26,mc:.15,mo:0,  ms:0, bl:.25,ht:0}
+};
+const P={},PV={};for(const k in MOODS.normal){P[k]=MOODS.normal[k];PV[k]=0}
+let sx=0,sy=0,nextSac=0,blinkDouble=false,bounce=0,bounceV=0;
+function springAll(dt){const tg=MOODS[mood]||MOODS.normal;const s=dt/1000;
+ for(const k in tg){const a=(tg[k]-P[k])*170-PV[k]*15;PV[k]+=a*s;P[k]+=PV[k]*s}
+ const a=-bounce*260-bounceV*13;bounceV+=a*s;bounce+=bounceV*s}
+function heartPath(r){x.beginPath();x.moveTo(0,r*.75);x.bezierCurveTo(-r*1.25,-.05*r,-r*.6,-r*1.05,0,-r*.42);x.bezierCurveTo(r*.6,-r*1.05,r*1.25,-.05*r,0,r*.75);x.closePath()}
+function drawEye(cx,cy,u,s,t){
+ const rx=u*.74,ry=u*.95;x.save();x.translate(cx,cy);
+ const cl=Math.min(1,Math.max(P.lid,blink)),hp=Math.min(1,Math.max(0,(P.bot-.3)/.22));
+ if(cl>.9||hp>0){x.strokeStyle="#eaf6ff";x.lineWidth=u*.15;x.lineCap="round";x.globalAlpha=cl>.9?1:hp;x.beginPath();if(cl>.9){x.moveTo(-rx*.8,0);x.quadraticCurveTo(0,ry*.45,rx*.8,0)}else{x.moveTo(-rx*.8,ry*.15);x.quadraticCurveTo(0,-ry*.65,rx*.8,ry*.15)}x.stroke();x.globalAlpha=1;if(cl>.9||hp>=1){x.restore();return}x.globalAlpha=1-hp}
+ x.beginPath();x.ellipse(0,0,rx,ry,0,0,7);x.save();x.clip();
+ // белок + тень сверху
+ const sg=x.createLinearGradient(0,-ry,0,ry);sg.addColorStop(0,'#c9dcef');sg.addColorStop(.35,'#f4faff');sg.addColorStop(1,'#ffffff');x.fillStyle=sg;x.fillRect(-rx,-ry,rx*2,ry*2);
+ const ix=gx*rx*.34,iy=gy*ry*.28,ir=rx*.74*P.iris;
+ if(P.ht>.5){x.save();x.translate(ix,iy);const p=1+Math.sin(t/180)*.07;x.scale(p,p);x.fillStyle='#ff4f7e';heartPath(ir*1.05);x.fill();
+  x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.ellipse(-ir*.38,-ir*.32,ir*.2,ir*.13,-.6,0,7);x.fill();x.restore()}
+ else{x.save();x.translate(ix,iy);
+  const g=x.createRadialGradient(0,ir*.25,ir*.1,0,0,ir);g.addColorStop(0,'#46c8ff');g.addColorStop(.55,'#1d78e0');g.addColorStop(.92,'#0d3a8c');g.addColorStop(1,'#08214f');
+  x.fillStyle=g;x.beginPath();x.arc(0,0,ir,0,7);x.fill();
+  x.fillStyle='#050b18';x.beginPath();x.arc(0,0,ir*.48*P.pup,0,7);x.fill();
+  x.fillStyle='#fff';x.beginPath();x.ellipse(-ir*.36,-ir*.4,ir*.3,ir*.24,-.5,0,7);x.fill();
+  x.globalAlpha=.85;x.beginPath();x.arc(ir*.34,ir*.32,ir*.11,0,7);x.fill();x.globalAlpha=1;x.restore()}
+ // верхнее веко-шторка: inner (к носу) опускается при злости, outer — при грусти
+ const c=Math.min(1,Math.max(P.lid,blink)),base=-ry+2*ry*c,inner=-s;
+ const yIn=base+P.tilt*ry*.45*(1-c*.6),yOut=base-P.tilt*ry*.2*(1-c*.6)+(P.tilt<0?-P.tilt*ry*.35:0);
+ const yL=inner<0?yIn:yOut,yR=inner<0?yOut:yIn;
+ x.fillStyle='#000';x.beginPath();x.moveTo(-rx-4,-ry-4);x.lineTo(rx+4,-ry-4);x.lineTo(rx+4,yR);x.quadraticCurveTo(0,(yL+yR)/2+ry*.22*(1-c),-rx-4,yL);x.closePath();x.fill();
+ // нижнее веко: «улыбающиеся» глаза
+ if(P.bot>.01){const yb=ry-P.bot*ry*1.25;x.beginPath();x.moveTo(-rx-4,ry+4);x.lineTo(rx+4,ry+4);x.lineTo(rx+4,yb+ry*.25);x.quadraticCurveTo(0,yb-P.bot*ry*.55,-rx-4,yb+ry*.25);x.closePath();x.fill()}
+ x.restore();x.globalAlpha=1;x.restore()}
+function drawBrow(cx,cy,u,s){
+ const rx=u*.74,ry=u*.95,inner=-s,asym=s>0?P.ba:-P.ba*.3;
+ const by=cy-ry*1.22-P.bu*ry*.38-asym*ry*.3;
+ const xi=cx+inner*rx*.75,xo=cx-inner*rx*.95,yi=by+P.bt*ry*.32,yo=by-P.bt*ry*.12;
+ x.strokeStyle='#8fe3ff';x.lineCap='round';x.lineWidth=u*.17;x.beginPath();x.moveTo(xo,yo);x.quadraticCurveTo(cx,Math.min(yi,yo)-ry*.16,xi,yi);x.stroke()}
+function drawMouth(cx,cy,u,t){
+ let w=u*P.mw,c=P.mc,o=P.mo;
+ if(speaking&&talk>.01){o=Math.max(o,.15+talk*.75);const k=Math.sin(t/140)*.5+.5;w*=1-talk*.3*k}
+ const cy0=-c*u*.2,sk=P.ms*u*.12;
+ const lx=-w,ly=cy0+sk,rx=w,ry=cy0-sk,up=c*u*.08,lo=up+o*u*.85+Math.max(0,c)*o*u*.25;
+ x.save();x.translate(cx,cy);x.beginPath();x.moveTo(lx,ly);x.quadraticCurveTo(0,up*2-(ly+ry)/2,rx,ry);x.quadraticCurveTo(0,lo*2-(ly+ry)/2,lx,ly);x.closePath();
+ if(o>.04){x.fillStyle='#2a0c1e';x.fill();if(o>.28){x.save();x.clip();x.fillStyle='#ff6f94';x.beginPath();x.ellipse(0,lo*.92,w*.42,u*.16,0,0,7);x.fill();x.restore()}}
+ x.strokeStyle='#ff8fb0';x.lineWidth=u*.085;x.lineJoin='round';x.lineCap='round';x.stroke();x.restore()}
+function frame(t){
+ const dt=Math.min(40,t-(frame.prev||t));frame.prev=t;
+ if(t-lastTouch>120000&&targetMood!=='sleep'){targetMood='sleep';moodChanged=t}
+ if(targetMood!==mood){mood=targetMood;bounceV+=(mood==='surprise'?1.4:mood==='happy'||mood==='love'?1:.6)}
+ if(blink>0){blink=Math.max(0,blink-dt/110);if(!blink&&blinkDouble){blinkDouble=false;nextBlink=t+90}}
+ else if(t>nextBlink&&mood!=='sleep'){blink=1;blinkDouble=Math.random()<.2;nextBlink=t+(blinkDouble?170:3000+Math.random()*3000)}
+ const bk=blink>0?1-Math.abs(blink*2-1):0; // треугольник 0→1→0
+ const fi=window.faceInfo||{},hasFace=!!(cameraStream&&fi.seen);
+ if(!hasFace&&t>nextSac){sx=(Math.random()-.5)*.6;sy=(Math.random()-.5)*.3;nextSac=t+1500+Math.random()*2500}
+ const tgx=mood==='think'?.55:hasFace?cameraTX:tx+sx,tgy=mood==='think'?-.6:hasFace?cameraTY:ty+sy,k=1-Math.exp(-dt/(hasFace?150:220));
+ gx+=(tgx-gx)*k;gy+=(tgy-gy)*k;springAll(dt);
+ if(speaking){const el=t-lastBoundary,p=lastBoundary?Math.max(0,1-el/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(p,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);
+ const u=Math.min(W/8.2,H/4.4),br=1+Math.sin(t/(mood==='sleep'?1900:1250))*.016,ey=H*.43;
+ const sb=blink;blink=bk;
+ x.fillStyle='#000';x.fillRect(0,0,W,H);x.save();
+ x.translate(W/2+gx*u*.06,H/2+gy*u*.04+Math.sin(t/950)*u*.015);x.rotate(Math.sin(t/1700)*.01+gx*.015);x.scale(br*(1-bounce*.07),br*(1+bounce*.06));x.translate(-W/2,-H/2);
+ const bl=Math.min(1,P.bl+(fi.size>.3?.3:0));if(bl>.02){x.globalAlpha=bl*.8;x.fillStyle='#ff5f93';for(const q of[-1,1]){x.beginPath();x.ellipse(W/2+q*u*2.15,ey+u*.95,u*.36,u*.17,0,0,7);x.fill()}x.globalAlpha=1}
+ drawEye(W/2-u*1.55,ey,u,-1,t);drawEye(W/2+u*1.55,ey,u,1,t);drawBrow(W/2-u*1.55,ey,u,-1);drawBrow(W/2+u*1.55,ey,u,1);
+ drawMouth(W/2,H*.72,u*1.3,t);
+ x.fillStyle='#bfefff';
+ if(mood==='sleep'){x.font=`bold ${u*.45}px sans-serif`;for(let i=0;i<3;i++){const ph=((t/1600)+i/3)%1;x.globalAlpha=Math.sin(ph*Math.PI);x.fillText('z',W/2+u*2.3+ph*u*.8,H*.3-ph*u*1.2)}x.globalAlpha=1}
+ if(mood==='think'){for(let i=0;i<3;i++){x.globalAlpha=(Math.floor(t/350)%4)>i?1:.2;x.beginPath();x.arc(W/2+u*2.45+i*u*.32,H*.15,u*.08,0,7);x.fill()}x.globalAlpha=1}
+ x.restore();blink=sb;requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script>
 (function(){const kb=document.getElementById("keyBtn"),lb=document.getElementById("listenBtn");
 function upd(){kb.textContent=robotChat.hasKey()?"Ключ Haiku: есть":"Ключ Haiku: нет";lb.textContent="Слушать: "+(robotChat.auto?"вкл":"выкл")}
 kb.onclick=e=>{e.stopPropagation();const k=prompt("Ключ API Anthropic (вставьте сами, хранится только на этом телефоне):","");if(k)robotChat.setKey(k);upd()};
