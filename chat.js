@@ -96,23 +96,28 @@ async function ask(text){caption(text);
 }
 
 const talking=()=>(typeof speaking!=='undefined'&&speaking)||speechSynthesis.speaking||performance.now()<(window.voiceBusyUntil||0); // speaking — общая переменная из face.html
+// Слушаем короткими кусками (на Android непрерывный режим дублирует слова),
+// куски склеиваем, отвечаем после 2 с тишины — дети говорят с остановками.
+let heard='',quiet=null;
 function relisten(){ if(!window.robotChat.auto) return; if(talking()||busy) return setTimeout(relisten,500); listen() }
+async function finish(){clearTimeout(quiet);const t=heard.trim();heard='';
+ if(!t||busy||talking()||t.length<2) return; busy=true;try{rec&&rec.abort()}catch(e){}
+ try{await ask(t)}catch(err){console.warn(err);window.say&&say('Ой, я задумался и запутался.','sad')} finally{busy=false;setTimeout(relisten,300)}}
 function listen(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return false;
  if(listening) return true;
- // слушаем непрерывно и ждём паузу 2 с: дети говорят с остановками
- rec=new SR(); rec.lang='ru-RU'; rec.interimResults=true; rec.continuous=true;
- let finalText='',interim='',quiet=null;
- const finish=async()=>{const t=(finalText+' '+interim).trim();finalText=interim='';try{rec.abort()}catch(e){}
-  if(!t||busy||talking()||t.length<2) return; busy=true;
-  try{await ask(t)}catch(err){console.warn(err);window.say&&say('Ой, я задумался и запутался.','sad')} finally{busy=false}};
- rec.onresult=e=>{if(busy||talking()) return;interim='';
-  for(let i=e.resultIndex;i<e.results.length;i++){const a=e.results[i][0];
-   if(e.results[i].isFinal){if(!(a.confidence>0&&a.confidence<.45))finalText+=' '+a.transcript}else interim+=a.transcript}
-  const now=(finalText+' '+interim).trim();if(now&&window.robotChat.onHear)window.robotChat.onHear(now);
+ rec=new SR(); rec.lang='ru-RU'; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+ let interim='';
+ rec.onresult=e=>{if(busy||talking()) return;const res=e.results[e.results.length-1],a=res[0];
+  if(res.isFinal){interim='';if(!(a.confidence>0&&a.confidence<.4))heard+=' '+a.transcript.trim()}else interim=a.transcript;
+  const now=(heard+' '+interim).trim();if(now&&window.robotChat.onHear)window.robotChat.onHear(now);
   clearTimeout(quiet);quiet=setTimeout(finish,2000)};
- rec.onend=()=>{listening=false;clearTimeout(quiet);if((finalText+interim).trim())finish();setTimeout(relisten,400)};
- rec.onerror=()=>{listening=false};
+ rec.onend=()=>{listening=false;
+  if(interim&&!heard.includes(interim))heard+=' '+interim;
+  if(busy) return;
+  if(heard.trim()){setTimeout(()=>{if(!busy&&!talking())listen()},50);return} // человек ещё может договорить
+  setTimeout(relisten,300)};
+ rec.onerror=e=>{listening=false};
  try{rec.start(); listening=true}catch(e){listening=false}
  return true;
 }
