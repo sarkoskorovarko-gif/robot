@@ -1,4 +1,4 @@
-﻿const VERSION='robot-v23';
+﻿const VERSION='robot-v24';
 const FILES=['./face.html','./vision.js','./brain.js','./chat.js','./tts.js','./learn.js','./fetch.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(VERSION).then(c=>c.addAll(FILES)))});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([caches.keys().then(k=>Promise.all(k.filter(x=>x!==VERSION).map(x=>caches.delete(x)))),self.clients.claim()])));

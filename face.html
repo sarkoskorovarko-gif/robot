@@ -93,13 +93,13 @@ const MOODS={
 };
 const P={},PV={};for(const k in MOODS.normal){P[k]=MOODS.normal[k];PV[k]=0}
 let sx=0,sy=0,nextSac=0,blinkDouble=false,bounce=0,bounceV=0;
-function springAll(dt){const tg=MOODS[mood]||MOODS.normal;const s=dt/1000;
+function springAll(dt){const tg=MOODS[OV.mood||mood]||MOODS.normal;const s=dt/1000;
  for(const k in tg){const a=(tg[k]-P[k])*170-PV[k]*15;PV[k]+=a*s;P[k]+=PV[k]*s}
  const a=-bounce*260-bounceV*13;bounceV+=a*s;bounce+=bounceV*s}
 function heartPath(r){x.beginPath();x.moveTo(0,r*.75);x.bezierCurveTo(-r*1.25,-.05*r,-r*.6,-r*1.05,0,-r*.42);x.bezierCurveTo(r*.6,-r*1.05,r*1.25,-.05*r,0,r*.75);x.closePath()}
 function drawEye(cx,cy,u,s,t){
  const rx=u*.74,ry=u*.95;x.save();x.translate(cx,cy);
- const cl=Math.min(1,Math.max(P.lid,blink)),hp=Math.min(1,Math.max(0,(P.bot-.3)/.22));
+ const cl=Math.min(1,Math.max(P.lid,blink,OV.lid||0)),hp=Math.min(1,Math.max(0,(P.bot-.3)/.22));
  if(cl>.9||hp>0){x.strokeStyle="#eaf6ff";x.lineWidth=u*.15;x.lineCap="round";x.globalAlpha=cl>.9?1:hp;x.beginPath();if(cl>.9){x.moveTo(-rx*.8,0);x.quadraticCurveTo(0,ry*.45,rx*.8,0)}else{x.moveTo(-rx*.8,ry*.15);x.quadraticCurveTo(0,-ry*.65,rx*.8,ry*.15)}x.stroke();x.globalAlpha=1;if(cl>.9||hp>=1){x.restore();return}x.globalAlpha=1-hp}
  x.beginPath();x.ellipse(0,0,rx,ry,0,0,7);x.save();x.clip();
  // белок + тень сверху
@@ -114,7 +114,7 @@ function drawEye(cx,cy,u,s,t){
   x.fillStyle='#fff';x.beginPath();x.ellipse(-ir*.36,-ir*.4,ir*.3,ir*.24,-.5,0,7);x.fill();
   x.globalAlpha=.85;x.beginPath();x.arc(ir*.34,ir*.32,ir*.11,0,7);x.fill();x.globalAlpha=1;x.restore()}
  // верхнее веко-шторка: inner (к носу) опускается при злости, outer — при грусти
- const c=Math.min(1,Math.max(P.lid,blink)),base=-ry+2*ry*c,inner=-s;
+ const c=Math.min(1,Math.max(P.lid,blink,OV.lid||0)),base=-ry+2*ry*c,inner=-s;
  const yIn=base+P.tilt*ry*.45*(1-c*.6),yOut=base-P.tilt*ry*.2*(1-c*.6)+(P.tilt<0?-P.tilt*ry*.35:0);
  const yL=inner<0?yIn:yOut,yR=inner<0?yOut:yIn;
  x.fillStyle=VIS;x.beginPath();x.moveTo(-rx-4,-ry-4);x.lineTo(rx+4,-ry-4);x.lineTo(rx+4,yR);x.quadraticCurveTo(0,(yL+yR)/2+ry*.22*(1-c),-rx-4,yL);x.closePath();x.fill();
@@ -127,7 +127,7 @@ function drawBrow(cx,cy,u,s){
  const xi=cx+inner*rx*.75,xo=cx-inner*rx*.95,yi=by+P.bt*ry*.32,yo=by-P.bt*ry*.12;
  x.strokeStyle='#8fe3ff';x.lineCap='round';x.lineWidth=u*.17;x.beginPath();x.moveTo(xo,yo);x.quadraticCurveTo(cx,Math.min(yi,yo)-ry*.16,xi,yi);x.stroke()}
 function drawMouth(cx,cy,u,t){
- let w=u*P.mw,c=P.mc,o=P.mo;
+ let w=u*P.mw,c=P.mc,o=Math.max(P.mo,OV.mo||0);
  if(speaking&&talk>.01){o=Math.max(o,.15+talk*.75);const k=Math.sin(t/140)*.5+.5;w*=1-talk*.3*k}
  const cy0=-c*u*.2,sk=P.ms*u*.12;
  const lx=-w,ly=cy0+sk,rx=w,ry=cy0-sk,up=c*u*.08,lo=up+o*u*.85+Math.max(0,c)*o*u*.25;
@@ -139,8 +139,8 @@ function drawMouth(cx,cy,u,t){
 const ARMS={normal:[[.25,-.2],[.25,-.2]],happy:[[1.85,.75],[1.85,.75]],love:[[.35,-2.2],[.35,-2.2]],surprise:[[1.9,.6],[1.9,.6]],
  sad:[[.06,0],[.06,0]],angry:[[.95,-2.4],[.95,-2.4]],think:[[.25,-.2],[1.05,-2.75]],sly:[[.95,-2.4],[.3,-.1]],sleep:[[.08,0],[.08,0]]};
 const arm=[[.25,-.2,0,0],[.25,-.2,0,0]];let tread=0,gest=null,gestUntil=0;
-window.addEventListener('robot-action',e=>{const a=e.detail;if(a==='wave'||a==='dance'||a==='nod'||a==='clap'){gest=a;gestUntil=performance.now()+(a==='dance'?5000:1800)}});
-function armTarget(q,t){const i=q<0?0:1;let [a1,a2]=(ARMS[mood]||ARMS.normal)[i];
+
+function armTarget(q,t){const i=q<0?0:1;if(OV.arms&&OV.arms[i])return OV.arms[i];let [a1,a2]=(ARMS[mood]||ARMS.normal)[i];
  if(t<gestUntil){if(gest==='wave'&&q>0){a1=2.5;a2=.5+Math.sin(t/110)*.55}
   else if(gest==='dance'){const p=Math.sin(t/260+(q<0?0:Math.PI));a1=1.2+p*.9;a2=p*.6}
   else if(gest==='clap'){a1=.9;a2=-1.9-Math.abs(Math.sin(t/120))*.5}
@@ -174,6 +174,37 @@ function drawBody(t,dt,hw,neckY){
  for(const [sx0,sy0,ex,ey2,hx,hy] of pts){x.strokeStyle='#8193a9';x.lineCap='round';x.lineJoin='round';x.lineWidth=H*.045;x.beginPath();x.moveTo(sx0,sy0);x.lineTo(ex,ey2);x.lineTo(hx,hy);x.stroke();
   x.strokeStyle='#dfe7f1';x.lineWidth=H*.03;x.stroke();x.fillStyle='#9fb0c4';x.beginPath();x.arc(ex,ey2,H*.022,0,7);x.fill();x.beginPath();x.arc(sx0,sy0,H*.03,0,7);x.fill();
   x.fillStyle='#f3f6fa';x.beginPath();x.arc(hx,hy,H*.04,0,7);x.fill();x.strokeStyle='#8193a9';x.lineWidth=2.5*s;x.stroke()}}
+// ---------- анимации-сценки: двигают тело, голову, руки, лицо ----------
+const env=p=>Math.sin(Math.PI*Math.min(1,Math.max(0,p)));
+const ACTS={
+ hop:     {d:1100,f:(p)=>({mood:'happy',jump:Math.abs(Math.sin(p*Math.PI*2))*.07,arms:[[1.85,.75],[1.85,.75]]})},
+ giggle:  {d:1300,f:(p,t)=>({mood:'happy',tilt:Math.sin(p*Math.PI*7)*.07*env(p),arms:[[.9,-2-Math.abs(Math.sin(t/90))*.4],[.9,-2-Math.abs(Math.sin(t/90))*.4]]})},
+ wave:    {d:1900,f:(p,t)=>({mood:'happy',tilt:.08*env(p),arms:[null,[2.5,.5+Math.sin(t/110)*.55]]})},
+ dance:   {d:5200,f:(p,t)=>{const q=Math.sin(t/260);return {mood:'happy',sway:q*.07,jump:Math.abs(q)*.035,tilt:-q*.08,arms:[[1.2+q*.9,q*.6],[1.2-q*.9,-q*.6]]}}},
+ clap:    {d:1500,f:(p,t)=>({mood:'happy',jump:Math.abs(Math.sin(t/120))*.015,arms:[[.9,-1.9-Math.abs(Math.sin(t/120))*.5],[.9,-1.9-Math.abs(Math.sin(t/120))*.5]]})},
+ nod:     {d:1000,f:(p)=>({headY:Math.sin(p*Math.PI*3)*.025*env(p)})},
+ scratch: {d:2600,f:(p,t)=>({mood:'think',tilt:-.1*env(p),arms:[null,[2.75,-1.7+Math.sin(t/80)*.25]]})},
+ stretch: {d:2800,f:(p)=>{const e=env(p);return {lid:.75*e,mo:.85*e,tilt:Math.sin(p*Math.PI*2)*.05,jump:.02*e,arms:[[.25+2.6*e,0],[.25+2.6*e,0]]}}},
+ look:    {d:3200,f:(p)=>({gx:Math.sin(p*Math.PI*2)*.95,gy:-.2*env(p),tilt:Math.sin(p*Math.PI*2)*.09})},
+ shiver:  {d:900, f:(p,t)=>({mood:'surprise',sway:Math.sin(t/25)*.02*env(p),arms:[[.15,-2.3],[.15,-2.3]]})},
+ sneeze:  {d:1600,f:(p)=>p<.6?{lid:.55*p/.6,mo:.45*p/.6,tilt:-.1*p/.6,headY:-.015*p/.6}:{mood:'surprise',jump:.035*env((p-.6)/.4),tilt:.14*(1-(p-.6)/.4),headY:.02*env((p-.6)/.4)}},
+ spin:    {d:1400,f:(p)=>({mood:'happy',sway:Math.sin(p*Math.PI*2)*.12,jump:.03*env(p),arms:[[1.6,.3],[1.6,.3]]})},
+ sad:     {d:2200,f:(p)=>({mood:'sad',headY:.02*env(p),tilt:.06*env(p),arms:[[.05,0],[.05,0]]})}
+};
+let act=null,OV={},nextIdle=performance.now()+9000;
+function play(n){if(ACTS[n]){act={n,s:performance.now()};lastTouch=performance.now()}}
+function stepAct(t){if(!act){OV={};return}const a=ACTS[act.n],p=(t-act.s)/a.d;if(p>=1){act=null;OV={};return}OV=a.f(p,t)||{}}
+window.robotAnim={play,list:Object.keys(ACTS),get playing(){return act&&act.n}};
+window.addEventListener('robot-action',e=>{const a=e.detail;const map={wave:'wave',dance:'dance',nod:'nod',clap:'clap',spin:'spin',come:'hop',back:'shiver'};if(map[a])play(map[a])});
+// сам по себе: иногда что-то делает, когда скучно
+setInterval(()=>{const now=performance.now();if(act||speaking||mood==='sleep'||document.hidden||now<nextIdle)return;
+ const bored=now-lastTouch>60000,r=Math.random();
+ play(bored?(r<.4?'stretch':r<.7?'look':'scratch'):(r<.35?'look':r<.55?'scratch':r<.7?'nod':r<.8?'sneeze':r<.9?'shiver':'giggle'));
+ nextIdle=now+9000+Math.random()*14000},1000);
+// увидел ребёнка — машет
+let seenBefore=false;window.addEventListener('face-update',()=>{const s=!!(window.faceInfo&&window.faceInfo.seen);if(s&&!seenBefore&&!act)play('wave');seenBefore=s});
+// касания: по голове — хихикает, по животу — подпрыгивает
+c.addEventListener('pointerdown',e=>{const y=e.clientY/innerHeight;setTimeout(()=>{if(!ui.classList.contains('on'))play(y<.55?'giggle':'hop')},60)});
 const VIS='#0a1222';let antA=0,antV=0,prevGX=0;
 function drawHead(t,hw,hh,hcy,vw,vh,vcy){
  const cx=W/2,top=hcy-hh/2,s=hh/300;
@@ -206,7 +237,7 @@ function frame(t){
  const bk=blink>0?1-Math.abs(blink*2-1):0; // треугольник 0→1→0
  const fi=window.faceInfo||{},hasFace=!!(cameraStream&&fi.seen);
  if(!hasFace&&t>nextSac){sx=(Math.random()-.5)*.6;sy=(Math.random()-.5)*.3;nextSac=t+1500+Math.random()*2500}
- const tgx=mood==='think'?.55:hasFace?cameraTX:tx+sx,tgy=mood==='think'?-.6:hasFace?cameraTY:ty+sy,k=1-Math.exp(-dt/(hasFace?150:220));
+ stepAct(t);const tgx=OV.gx!==undefined?OV.gx:mood==='think'?.55:hasFace?cameraTX:tx+sx,tgy=OV.gy!==undefined?OV.gy:mood==='think'?-.6:hasFace?cameraTY:ty+sy,k=1-Math.exp(-dt/(hasFace?150:220));
  gx+=(tgx-gx)*k;gy+=(tgy-gy)*k;springAll(dt);
  if(speaking){const el=t-lastBoundary,p=lastBoundary?Math.max(0,1-el/220):0;talkNoise+=(Math.sin(t*.045)*.5+.5-talkNoise)*.22;talk=Math.max(p,talkNoise*.22)}else talk=Math.max(0,talk-dt/90);
  // голова робота: корпус, стекло-экран, уши-динамики, антенна
@@ -214,8 +245,8 @@ function frame(t){
  const u=Math.min(vw/6.5,vh/3.9),br=1+Math.sin(t/(mood==='sleep'?1900:1250))*.016,ey=vcy-u*.25;
  const sb=blink;blink=bk;
  x.fillStyle='#000';x.fillRect(0,0,W,H);x.save();
- x.translate(W/2+gx*u*.06,H/2+gy*u*.04+Math.sin(t/950)*u*.015);x.rotate(Math.sin(t/1700)*.01+gx*.015);x.scale(br*(1-bounce*.07),br*(1+bounce*.06));x.translate(-W/2,-H/2);
- drawBody(t,dt,hw,hcy+hh/2);drawHead(t,hw,hh,hcy,vw,vh,vcy);
+ x.translate(W/2+gx*u*.06,H/2+gy*u*.04+Math.sin(t/950)*u*.015);x.rotate(Math.sin(t/1700)*.01+gx*.015+(OV.sway||0));x.translate(0,-(OV.jump||0)*H);x.scale(br*(1-bounce*.07),br*(1+bounce*.06));x.translate(-W/2,-H/2);
+ drawBody(t,dt,hw,hcy+hh/2);x.save();x.translate(W/2,hcy+hh/2);x.rotate(OV.tilt||0);x.translate(-W/2,-(hcy+hh/2)+(OV.headY||0)*H);drawHead(t,hw,hh,hcy,vw,vh,vcy);
  const bl=Math.min(1,P.bl+(fi.size>.3?.3:0));if(bl>.02){x.globalAlpha=bl*.8;x.fillStyle='#ff5f93';for(const q of[-1,1]){x.beginPath();x.ellipse(W/2+q*u*2.15,ey+u*.95,u*.36,u*.17,0,0,7);x.fill()}x.globalAlpha=1}
  drawEye(W/2-u*1.55,ey,u,-1,t);drawEye(W/2+u*1.55,ey,u,1,t);drawBrow(W/2-u*1.55,ey,u,-1);drawBrow(W/2+u*1.55,ey,u,1);
  drawMouth(W/2,vcy+u*1.2,u*1.15,t);
@@ -223,7 +254,7 @@ function frame(t){
  x.fillStyle='#bfefff';
  if(mood==='sleep'){x.font=`bold ${u*.45}px sans-serif`;for(let i=0;i<3;i++){const ph=((t/1600)+i/3)%1;x.globalAlpha=Math.sin(ph*Math.PI);x.fillText('z',W/2+u*2.2+ph*u*.7,vcy-u*.9-ph*u*.9)}x.globalAlpha=1}
  if(mood==='think'){for(let i=0;i<3;i++){x.globalAlpha=(Math.floor(t/350)%4)>i?1:.2;x.beginPath();x.arc(W/2+u*2.2+i*u*.32,vcy-u*1.45,u*.08,0,7);x.fill()}x.globalAlpha=1}
- x.restore();blink=sb;requestAnimationFrame(frame)}
+ x.restore();x.restore();blink=sb;requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 window.robot={get ch(){return ch},get m(){return m},get LEFT(){return LEFT},get RIGHT(){return RIGHT},get CLAW(){return CLAW},get ARM(){return ARM},get LEFT_FWD(){return LEFT_FWD},get RIGHT_FWD(){return RIGHT_FWD},get speed(){return +sp.value},face,say,send,stop,run};</script><script src="vision.js"></script><script src="brain.js"></script><script src="chat.js"></script><script src="tts.js"></script><script src="learn.js"></script><script src="fetch.js"></script><script>
 (function(){const kb=document.getElementById("keyBtn"),lb=document.getElementById("listenBtn");
