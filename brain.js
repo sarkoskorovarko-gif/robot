@@ -16,13 +16,16 @@
   function cancelMove(){ clearTimeout(moveTimer); moveTimer=null; }
   function stop(){ cancelMove(); actionUntil=0; try { r.stop(); } catch(e) {} }
   function drive(left,right,ms){
-    stop(); if(!enabled || document.hidden || !r.ch) return;
+    // без стопа перед новой командой: повторные вызовы = непрерывная езда
+    cancelMove(); if(!enabled || document.hidden || !r.ch) return stop();
     ms=Math.max(0,Math.min(1500,ms|0));
-    const cap=Math.min(1, Math.max(0,+r.speed/127));
+    const cap=Math.min(1, Math.max(0,+r.speed/127)),MIN=72; // ниже ~70 гусеницы гудят и стоят
+    const pw=v=>v===0?0:Math.sign(v)*(MIN+(127-MIN)*Math.min(1,Math.abs(v))*cap);
+    const was=r.m[r.LEFT]!==128||r.m[r.RIGHT]!==128;
     r.m.fill(128);
-    r.m[r.LEFT]=Math.max(1,Math.min(255,Math.round(128+left*cap*127*r.LEFT_FWD)));
-    r.m[r.RIGHT]=Math.max(1,Math.min(255,Math.round(128+right*cap*127*r.RIGHT_FWD)));
-    r.run(); actionUntil=performance.now()+ms;
+    r.m[r.LEFT]=Math.max(1,Math.min(255,Math.round(128+pw(left)*r.LEFT_FWD)));
+    r.m[r.RIGHT]=Math.max(1,Math.min(255,Math.round(128+pw(right)*r.RIGHT_FWD)));
+    if(!was) r.run(); actionUntil=performance.now()+ms;
     moveTimer=setTimeout(stop,ms);
   }
   function limb(index,dir,ms){
@@ -89,14 +92,14 @@
         const centered=Math.abs(info.x||0)<=0.25;
         if((info.size||0)>0.30){stop();r.face('happy');setState('approach');return;}
         if(now-lastPlay>45000 && (info.size||0)>=0.18 && Math.random()<0.015){dance();return;}
-        if(!centered){setState('track');const d=rand(150,250);drive(info.x>0?1:-1,info.x>0?-1:1,d);pauseUntil=now+d+300;return;}
-        if((info.size||0)<0.18){setState('approach');drive(1,1,400);pauseUntil=now+850;return;}
+        if(!centered){setState('track');const v=.15+.5*Math.min(1,Math.abs(info.x));drive(info.x>0?v:-v,info.x>0?-v:v,350);return;}
+        if((info.size||0)<0.18){setState('approach');drive(1,1,400);return;}
         stop();setState('approach');return;
       }
       if(lastSeen && now-lastSeen>2000 && state!=='search'){stop();setState('search');searchSteps=0;}
       if(state==='search'){
         if(searchSteps>=8){setState('idle');idleSince=now;return;}
-        if(now>=actionUntil+400){drive(0.35,-0.35,300);searchSteps++;}
+        if(now>=actionUntil+500){drive(0.4,-0.4,600);searchSteps++;}
         return;
       }
       if(state==='sleep'||now-idleSince>180000){stop();r.face('sleep');setState('sleep');asleep=true;return;}
