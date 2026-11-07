@@ -18,7 +18,7 @@
   function drive(left,right,ms){
     stop(); if(!enabled || document.hidden || !r.ch) return;
     ms=Math.max(0,Math.min(1500,ms|0));
-    const cap=Math.min(0.6, Math.max(0,+r.speed/127*0.6));
+    const cap=Math.min(1, Math.max(0,+r.speed/127));
     r.m.fill(128);
     r.m[r.LEFT]=Math.max(1,Math.min(255,Math.round(128+left*cap*127*r.LEFT_FWD)));
     r.m[r.RIGHT]=Math.max(1,Math.min(255,Math.round(128+right*cap*127*r.RIGHT_FWD)));

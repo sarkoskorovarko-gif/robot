@@ -21,7 +21,7 @@ const ov=document.getElementById('mapov'),info=document.getElementById('mapinfo'
 const DR={f:[1,1],b:[-1,-1],l:[-1,1],r:[1,-1]};
 ov.querySelectorAll('[data-md]').forEach(b=>{
  b.onpointerdown=e=>{e.preventDefault();if(!r||!r.ch){info.textContent='Робот не подключён:\nподключите в пульте лица';return}
-  const[l,rr]=DR[b.dataset.md],v=Math.min(70,r.speed);r.m.fill(128);r.m[r.LEFT]=128+r.LEFT_FWD*l*v;r.m[r.RIGHT]=128+r.RIGHT_FWD*rr*v;r.run()};
+  const[l,rr]=DR[b.dataset.md],v=r.speed;r.m.fill(128);r.m[r.LEFT]=128+r.LEFT_FWD*l*v;r.m[r.RIGHT]=128+r.RIGHT_FWD*rr*v;r.run()};
  b.onpointerup=b.onpointerleave=b.onpointercancel=()=>r&&r.stop()});
 
 // --- карта: сетка 5 см ---
