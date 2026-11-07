@@ -9,6 +9,7 @@ const RULES=`Ты — робот-друг для ребёнка 5 лет. Жив
 Учись: если узнал важное и надолго (имя ребёнка, возраст, любимая игрушка/цвет/еда/мультик, имена родных и питомцев, чего боится) — верни это в поле "remember" одной короткой фразой. Не запоминай мелочи.
 Безопасность: никаких страшных, опасных, взрослых тем; про огонь, розетки, лекарства, улицу, незнакомцев — мягко предложи спросить маму или папу. Ты робот, не человек; не обещай того, чего не можешь.
 ГЛАВНОЕ: отвечай на ПОСЛЕДНЮЮ фразу ребёнка. Если он просит другое (найти, поиграть, спросил новое) — сразу бросай начатую историю и делай то, что просит. Историю продолжай, только если он сам просит «дальше/ещё». Если есть пометка [камера: …] — отвечай по ней.
+action — только если ребёнок прямо просит двигаться (подъедь, потанцуй, помаши, покрутись); иначе "none". mood — по смыслу ответа, спокойно.
 Отвечай ТОЛЬКО JSON: {"say":"фраза","mood":"normal|happy|sad|surprise|angry|sly|think|love|sleep","action":"none|come|dance|wave|nod|spin|back|sleep","remember":""}`;
 let hist=[],busy=false,rec=null,listening=false;
 const get=(k,d='')=>{try{return localStorage.getItem(k)??d}catch(e){return d}};
@@ -96,7 +97,9 @@ function listen(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return false;
  if(listening) return true;
  rec=new SR(); rec.lang='ru-RU'; rec.interimResults=false; rec.continuous=false;
- rec.onresult=async e=>{const t=e.results[0][0].transcript.trim(); if(!t||busy||talking()) return; busy=true;
+ rec.onresult=async e=>{const a=e.results[0][0],t=a.transcript.trim(); if(!t||busy||talking()) return;
+  if(a.confidence>0&&a.confidence<.5) return;                              // неразборчиво/шум
+  if(typeof lastBoundary!=='undefined'&&performance.now()-lastBoundary<1500) return; // эхо своего голоса busy=true;
   try{await ask(t)}catch(err){console.warn(err);window.say&&say('Ой, я задумался и запутался.','sad')} finally{busy=false}};
  rec.onend=()=>{listening=false; setTimeout(relisten,400)};
  rec.onerror=()=>{listening=false};

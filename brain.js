@@ -84,7 +84,7 @@
       const seen=!!info.seen, appeared=seen&&!lastSeenFlag; lastSeenFlag=seen;
       if(appeared){
         stop(); idleSince=now; r.face('surprise',600); setTimeout(()=>{if(enabled)r.face('happy');},600);
-        if(now-lastGreeting>60000){r.say(greetings[Math.floor(Math.random()*greetings.length)],'happy');lastGreeting=now;}
+        if(now-lastGreeting>300000){r.say(greetings[Math.floor(Math.random()*greetings.length)],'happy');lastGreeting=now;}
         searchSteps=0;setState('noticed');return;
       }
       if(seen){

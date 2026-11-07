@@ -75,7 +75,7 @@ document.addEventListener('visibilitychange',async()=>{if(document.visibilitySta
 function wake(){lastTouch=performance.now();if(targetMood==='sleep')face('happy')}
 function touchReact(){enterScreen();wake();const a=['happy','surprise','love'];face(a[Math.floor(Math.random()*a.length)],850);anim=1}
 let holdTimer=null,longHold=false;c.addEventListener('pointerdown',e=>{e.preventDefault();holdTimer=setTimeout(()=>{longHold=true;ui.classList.add('on');face('surprise',700)},700)});c.addEventListener('pointerup',()=>{clearTimeout(holdTimer);if(!longHold)touchReact();longHold=false});c.addEventListener('pointercancel',()=>clearTimeout(holdTimer));
-setInterval(()=>{if(performance.now()-lastTouch<120000&&targetMood!=='sleep'){const q=Math.random();if(q<.5){}else if(q<.65)face('surprise',650);else if(q<.8)face('happy',550);else face('sly',700)}},5000);
+// случайные гримасы убраны — эмоции только по делу
 /* ---------- Лицо (рисует Claude): пружинные параметры, веки-шторки, гибкий рот ---------- */
 // параметры: lid верх. веко 0..1, tilt наклон век (+ злой, - грустный), bot нижн. веко (улыбка глаз),
 // pup зрачок, iris радужка, bu брови вверх, bt наклон бровей, ba асимметрия бровей,
@@ -145,7 +145,7 @@ function armTarget(q,t){const i=q<0?0:1;if(OV.arms&&OV.arms[i])return OV.arms[i]
   else if(gest==='dance'){const p=Math.sin(t/260+(q<0?0:Math.PI));a1=1.2+p*.9;a2=p*.6}
   else if(gest==='clap'){a1=.9;a2=-1.9-Math.abs(Math.sin(t/120))*.5}
   else if(gest==='nod'){a1=.4;a2=-.3}}
- else if(speaking&&talk>.05&&mood!=='sleep'){a2+=Math.sin(t/230+i*2)*.25*talk;a1+=Math.sin(t/310+i)*.12}
+ else if(speaking&&talk>.05&&mood!=='sleep'){a2+=Math.sin(t/400+i*2)*.1*talk;a1+=Math.sin(t/520+i)*.05}
  else{a1+=Math.sin(t/1400+i*1.7)*.05}
  return [a1,a2]}
 function drawBody(t,dt,hw,neckY){
@@ -199,10 +199,10 @@ window.addEventListener('robot-action',e=>{const a=e.detail;const map={wave:'wav
 // сам по себе: иногда что-то делает, когда скучно
 setInterval(()=>{const now=performance.now();if(act||speaking||mood==='sleep'||document.hidden||now<nextIdle)return;
  const bored=now-lastTouch>60000,r=Math.random();
- play(bored?(r<.4?'stretch':r<.7?'look':'scratch'):(r<.35?'look':r<.55?'scratch':r<.7?'nod':r<.8?'sneeze':r<.9?'shiver':'giggle'));
- nextIdle=now+9000+Math.random()*14000},1000);
+ play(bored?(r<.5?'stretch':'look'):(r<.6?'look':'scratch'));
+ nextIdle=now+30000+Math.random()*40000},1000);
 // увидел ребёнка — машет
-let seenBefore=false;window.addEventListener('face-update',()=>{const s=!!(window.faceInfo&&window.faceInfo.seen);if(s&&!seenBefore&&!act)play('wave');seenBefore=s});
+let seenBefore=false;window.addEventListener('face-update',()=>{const s=!!(window.faceInfo&&window.faceInfo.seen);if(s&&!seenBefore&&!act&&performance.now()-(window._lastWave||-1e9)>180000){play('wave');window._lastWave=performance.now()}seenBefore=s});
 // касания: по голове — хихикает, по животу — подпрыгивает
 c.addEventListener('pointerdown',e=>{const y=e.clientY/innerHeight;setTimeout(()=>{if(!ui.classList.contains('on'))play(y<.55?'giggle':'hop')},60)});
 const VIS='#0a1222';let antA=0,antV=0,prevGX=0;
