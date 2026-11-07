@@ -28,7 +28,7 @@
   function limb(index,dir,ms){
     stop(); if(!enabled || document.hidden || !r.ch) return;
     // мощность: клешня и рука сильнее (было 35 и 70 — не хватало)
-    const pw=JSON.parse(localStorage.getItem('robotLimbPower')||'{"claw":75,"arm":110}');
+    const pw=JSON.parse(localStorage.getItem('robotLimbPower')||'{"claw":127,"arm":127}');
     r.m.fill(128); r.m[index]=Math.round(128+dir*(index===r.CLAW?pw.claw:pw.arm));
     r.run(); moveTimer=setTimeout(stop,Math.max(1,Math.min(index===r.CLAW?1400:2000,ms)));
   }
