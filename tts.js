@@ -43,7 +43,7 @@ async function elevenSay(text,mood='normal'){
    const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
     headers:{'content-type':'application/json','authorization':'Bearer '+key,'X-Title':'Robot'},
     body:JSON.stringify({model:'openai/gpt-audio-mini',modalities:['text','audio'],audio:{voice,format:'pcm16'},stream:true,
-     messages:[{role:'system',content:'Ты голос весёлого доброго маленького робота-друга для ребёнка. Произнеси текст пользователя дословно по-русски, живо, тепло, с улыбкой. Ничего не добавляй.'},{role:'user',content:text}]})});
+     messages:[{role:'system',content:'Произнеси текст пользователя дословно по-русски, естественным спокойным дружелюбным голосом, в обычном темпе, без наигранности. Ничего не добавляй.'},{role:'user',content:text}]})});
    if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,150));
    // поток SSE: кусочки PCM16 24 кГц в base64 → WAV
    const rd=r.body.getReader(),dec=new TextDecoder();let rest='',parts=[];
