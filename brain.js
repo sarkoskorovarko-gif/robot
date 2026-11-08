@@ -29,7 +29,7 @@
     moveTimer=setTimeout(stop,ms);
   }
   function limb(index,dir,ms){
-    stop(); if(!enabled || document.hidden || !r.ch) return;
+    stop(); if(document.hidden || !r.ch) return; // рука и клешня — и без автономии (не едет)
     // мощность: клешня и рука сильнее (было 35 и 70 — не хватало)
     const pw=JSON.parse(localStorage.getItem('robotLimbPower')||'{"claw":127,"arm":127}');
     r.m.fill(128); r.m[index]=Math.round(128+dir*(index===r.CLAW?pw.claw:pw.arm));
@@ -109,7 +109,14 @@
   }
   // действия, которые выбрала «думалка» (chat.js)
   window.addEventListener('robot-action',async e=>{
-    if(!enabled||busy) return; const a=e.detail;
+    const a=e.detail;
+    // клешня и рука — работают и без автономии
+    const LIMB={claw_open:async()=>{claw('open',900);await wait(1000)},claw_close:async()=>{claw('close',1200);await wait(1300)},
+     arm_up:async()=>{arm('up',1200);await wait(1300)},arm_down:async()=>{arm('down',1100);await wait(1200)},
+     grab:async()=>{claw('open',900);await wait(1000);arm('down',1100);await wait(1200);claw('close',1200);await wait(1300);arm('up',1100);await wait(1200)},
+     give:async()=>{arm('down',700);await wait(800);claw('open',900);await wait(1000);arm('up',700);await wait(800)}};
+    if(LIMB[a]){if(busy||!r.ch)return;busy=true;try{await LIMB[a]()}finally{stop();busy=false}return}
+    if(!enabled||busy) return;
     if(a==='dance') return dance();
     busy=true; try{
       if(a==='come'){ drive(1,1,700); await wait(800); }
